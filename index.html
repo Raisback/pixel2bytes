@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Animation Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Base styles */
+        body { font-family: 'Inter', sans-serif; }
+        .editor-container { max-width: 1200px; }
+
+        /* Canvas styles */
+        #gridCanvas, #playerCanvas {
+            border: 2px solid #374151;
+            background-color: #f3f4f6;
+            touch-action: none;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+            width: 100%;
+            height: auto;
+        }
+
+        /* Tab styles */
+        .tab-btn {
+            @apply px-4 py-2 font-semibold text-gray-600 border-b-2 border-transparent transition-colors;
+        }
+        .tab-btn.active-tab {
+            @apply text-indigo-600 border-indigo-600;
+        }
+
+        /* Tool active state */
+        .tool-btn.active {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        /* Layer/Frame item focus/active */
+        .item.active {
+            background-color: #e0f2fe; 
+            border-left: 4px solid #3b82f6;
+        }
+        .item:hover {
+            background-color: #f3f4f6;
+        }
+
+        /* Output text */
+        .pixel-output {
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* Modal specific styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 md:p-8 flex justify-center">
+
+    <div class="editor-container w-full">
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-4">Pixel Animation Studio</h1>
+
+        <div class="flex border-b mb-6">
+            <button class="tab-btn active-tab" data-tab="editor">Single Frame Editor</button>
+            <button class="tab-btn" data-tab="player">Animation Player</button>
+        </div>
+
+        <div id="tab-content">
+            
+            <div id="editor" class="tab-page">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <div class="lg:col-span-3 space-y-6">
+                        
+                        <div class="bg-white p-4 rounded-xl shadow-lg">
+                            <h2 class="text-xl font-semibold mb-3 text-gray-700">Tools</h2>
+                            <div id="toolPanel" class="grid grid-cols-4 gap-2">
+                                </div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-xl shadow-lg">
+                            <h2 class="text-xl font-semibold mb-3 text-gray-700">Config</h2>
+                            <div class="mb-4">
+                                <label for="iconWidth" class="block text-sm font-medium text-gray-700">Width (X)</label>
+                                <input type="number" id="iconWidth" value="16" min="1" max="84" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                            </div>
+                            <div class="mb-4">
+                                <label for="iconHeight" class="block text-sm font-medium text-gray-700">Height (Y)</label>
+                                <input type="number" id="iconHeight" value="16" min="1" max="48" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                                <p class="text-xs text-gray-500 mt-1">Export is Row-Major (Y, Bank, Bit).</p>
+                            </div>
+                            <button id="applyResBtn" class="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors">
+                                Apply Resolution
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-6 bg-white p-6 rounded-xl shadow-lg flex flex-col items-center">
+                        <h2 class="text-xl font-semibold text-gray-700 mb-4">
+                            Frame <span id="currentFrameNum">1</span> (<span id="dimsText">16x16</span>)
+                        </h2>
+                        <div class="max-w-full overflow-hidden">
+                            <canvas id="gridCanvas" width="512" height="512"></canvas>
+                        </div>
+                        
+                        <div class="mt-4 flex space-x-4">
+                            <button id="clearBtn" class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600 transition-colors">
+                                Clear Active Layer
+                            </button>
+                            <button id="importBtn" class="px-4 py-2 bg-purple-500 text-white font-semibold rounded-lg shadow-md hover:bg-purple-600 transition-colors">
+                                Paste & Import C Array
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-3 space-y-6">
+
+                        <div class="bg-white p-4 rounded-xl shadow-lg">
+                            <h2 class="text-xl font-semibold mb-3 text-gray-700">Frames (<span id="totalFramesCount">1</span>)</h2>
+                            <div id="frameList" class="space-y-1 max-h-32 overflow-y-auto mb-4">
+                                </div>
+                            <button id="newFrameBtn" class="w-full px-4 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition-colors">
+                                + Add/Duplicate Frame
+                            </button>
+                        </div>
+                        
+                        <div class="bg-white p-4 rounded-xl shadow-lg">
+                            <h2 class="text-xl font-semibold mb-3 text-gray-700">Layers (Active: <span id="activeLayerName">Base Layer</span>)</h2>
+                            <div id="layerList" class="space-y-1 max-h-40 overflow-y-auto mb-4">
+                                </div>
+                            <button id="newLayerBtn" class="w-full px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition-colors">
+                                + New Layer
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-12">
+                        <div class="bg-gray-800 p-4 rounded-xl shadow-lg text-white">
+                            <h2 class="text-xl font-semibold mb-3">C Array Export (Row-Major)</h2>
+                            <div class="flex space-x-4 mb-3">
+                                <button id="copySingleFrameBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg transition duration-150 text-sm">
+                                    Copy Single Frame Array (<span id="singleFrameByteCount">0</span> bytes)
+                                </button>
+                                <button id="copyAnimationBtn" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-gray-900 font-bold py-2 px-3 rounded-lg transition duration-150 text-sm">
+                                    Copy Animation Array (<span id="animationByteCount">0</span> bytes)
+                                </button>
+                            </div>
+                            <div id="byteOutput" class="pixel-output text-yellow-400 text-xs h-32 overflow-y-auto p-2 bg-black rounded-md">
+                                Generated code will appear here.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="player" class="tab-page hidden">
+                <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800">Animation Preview</h2>
+                    <canvas id="playerCanvas" width="512" height="512"></canvas>
+                    <div class="mt-6 flex items-center space-x-6">
+                        
+                        <label for="speedInput" class="text-sm font-medium text-gray-700">Speed (ms/Frame):</label>
+                        <input type="number" id="speedInput" value="250" min="50" max="1000" step="50" class="w-20 p-2 border rounded-lg text-center">
+
+                        <button id="prevFrameBtn" class="p-3 bg-gray-200 hover:bg-gray-300 rounded-full transition-colors text-xl font-bold" title="Previous Frame">
+                            ◀
+                        </button>
+                        <button id="playStopBtn" class="p-4 bg-red-500 text-white hover:bg-red-600 rounded-full transition-colors text-2xl font-bold shadow-lg" title="Play/Stop">
+                            ▶
+                        </button>
+                        <button id="nextFrameBtn" class="p-3 bg-gray-200 hover:bg-gray-300 rounded-full transition-colors text-xl font-bold" title="Next Frame">
+                            ▶
+                        </button>
+                    </div>
+                    <p class="mt-4 text-lg font-medium text-gray-700">
+                        Current Frame: <span id="playerCurrentFrame">1</span> / <span id="playerTotalFrames">1</span>
+                    </p>
+                </div>
+            </div>
+
+        </div> </div>
+
+    <div id="importModal" class="modal-overlay hidden">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-lg">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Import C Array Data</h2>
+            
+            <textarea id="arrayInput" class="w-full h-32 p-3 border border-gray-300 rounded-lg font-mono text-sm resize-none focus:ring-blue-500 focus:border-blue-500" placeholder="Paste your const uint8_t array here..."></textarea>
+            
+            <div class="flex items-center justify-between mt-3 mb-4">
+                <button id="previewArrayBtn" class="px-4 py-2 bg-orange-500 text-white font-semibold rounded-lg shadow-md hover:bg-orange-600 transition-colors">
+                    Preview Array
+                </button>
+                <div class="text-sm text-gray-600">
+                    <span id="previewDims">W: ? H: ?</span> | <span id="previewBytes">Bytes: ?</span>
+                </div>
+            </div>
+
+            <div class="text-center mb-4 p-2 border border-dashed border-gray-300 rounded-lg">
+                <h3 class="text-lg font-medium mb-2">Preview</h3>
+                <canvas id="previewCanvas" width="128" height="128" class="border border-gray-400 mx-auto" style="image-rendering: pixelated;"></canvas>
+                <p id="previewError" class="text-red-500 mt-2 text-sm hidden">Error during parsing.</p>
+            </div>
+
+            <div class="flex justify-end space-x-3">
+                <button id="cancelImportBtn" class="px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition-colors">
+                    Cancel
+                </button>
+                <button id="commitImportBtn" disabled class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md opacity-50 cursor-not-allowed transition-colors">
+                    Import to Active Layer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration & State ---
+        const MAX_CANVAS_WIDTH = 512; 
+        let iconWidth = 16;
+        let iconHeight = 16;
+        let pixelSize = MAX_CANVAS_WIDTH / iconWidth; 
+        
+        let frames = []; // Array of { name: string, layers: Layer[] }
+        let currentFrameIndex = 0;
+        let activeLayerIndex = 0;
+        let currentTool = 'pencil';
+        
+        let isDrawing = false; 
+        let drawingState = 1; // 1 for drawing, 0 for erasing
+        
+        let startX = -1, startY = -1; 
+        let previewPixels = null; 
+        let layerSnapshot = null; 
+        let parsedGrid = null;
+
+        let isPlaying = false;
+        let animationSpeed = 250; // ms per frame
+        let lastTimestamp = 0;
+        let animationFrameId = null; 
+
+        // Tool definitions - MODIFIED to only include Pencil and Eraser
+        const TOOLS = [
+            { id: 'pencil', name: 'Pencil', icon: '✎', cursor: 'crosshair' },
+            { id: 'eraser', name: 'Eraser', icon: '🧼', cursor: 'cell' },
+            // Removed: line, rectangle, circle, move, fill
+        ];
+
+        // --- DOM Elements ---
+        const canvas = document.getElementById('gridCanvas');
+        const ctx = canvas.getContext('2d');
+        const playerCanvas = document.getElementById('playerCanvas');
+        const playerCtx = playerCanvas.getContext('2d');
+        const byteOutputDiv = document.getElementById('byteOutput');
+        const dimsText = document.getElementById('dimsText');
+        const inputWidth = document.getElementById('iconWidth');
+        const inputHeight = document.getElementById('iconHeight');
+        const layerListDiv = document.getElementById('layerList');
+        const frameListDiv = document.getElementById('frameList');
+        const toolPanelDiv = document.getElementById('toolPanel');
+        const activeLayerNameSpan = document.getElementById('activeLayerName');
+        const currentFrameNumSpan = document.getElementById('currentFrameNum');
+        const totalFramesCountSpan = document.getElementById('totalFramesCount');
+        const singleFrameByteCountSpan = document.getElementById('singleFrameByteCount');
+        const animationByteCountSpan = document.getElementById('animationByteCount');
+
+        // Animation Player Elements
+        const playStopBtn = document.getElementById('playStopBtn');
+        const nextFrameBtn = document.getElementById('nextFrameBtn');
+        const prevFrameBtn = document.getElementById('prevFrameBtn');
+        const speedInput = document.getElementById('speedInput');
+        const playerCurrentFrameSpan = document.getElementById('playerCurrentFrame');
+        const playerTotalFramesSpan = document.getElementById('playerTotalFrames');
+
+        // Export Buttons
+        const copySingleFrameBtn = document.getElementById('copySingleFrameBtn');
+        const copyAnimationBtn = document.getElementById('copyAnimationBtn');
+
+        // Modal Elements (omitted for brevity, assume linked)
+        const importModal = document.getElementById('importModal');
+        const arrayInput = document.getElementById('arrayInput');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const previewCtx = previewCanvas.getContext('2d');
+        const previewArrayBtn = document.getElementById('previewArrayBtn');
+        const commitImportBtn = document.getElementById('commitImportBtn');
+        const cancelImportBtn = document.getElementById('cancelImportBtn');
+        const previewDimsSpan = document.getElementById('previewDims');
+        const previewBytesSpan = document.getElementById('previewBytes');
+        const previewErrorP = document.getElementById('previewError');
+        const mainImportBtn = document.getElementById('importBtn');
+
+        // --- Core State Accessors ---
+
+        function getActiveLayers() {
+            return frames[currentFrameIndex].layers;
+        }
+        function getActiveFrame() {
+            return frames[currentFrameIndex];
+        }
+
+        // --- Utility Functions ---
+
+        function createBlankGrid(w, h) {
+            return Array.from({ length: h }, () => Array(w).fill(0));
+        }
+
+        function getPixelCoords(e) { 
+            const targetCanvas = e.currentTarget;
+            const rect = targetCanvas.getBoundingClientRect();
+            let clientX, clientY;
+            
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            const x = Math.floor(((clientX - rect.left) / rect.width) * iconWidth);
+            const y = Math.floor(((clientY - rect.top) / rect.height) * iconHeight);
+            return { x, y };
+        }
+
+        function setPixel(grid, x, y, value) {
+            if (x >= 0 && x < iconWidth && y >= 0 && y < iconHeight) {
+                grid[y][x] = value;
+            }
+        }
+        
+        // --- Drawing Algorithms (Kept only drawLine for line support in pencil/eraser) ---
+        function drawLine(grid, x0, y0, x1, y1, value) {
+            const dx = Math.abs(x1 - x0);
+            const dy = Math.abs(y1 - y0);
+            const sx = (x0 < x1) ? 1 : -1;
+            const sy = (y0 < y1) ? 1 : -1;
+            let err = dx - dy;
+            while (true) {
+                setPixel(grid, x0, y0, value);
+                if ((x0 === x1) && (y0 === y1)) break;
+                const e2 = 2 * err;
+                if (e2 > -dy) { err -= dy; x0 += sx; }
+                if (e2 < dx) { err += dx; y0 += sy; }
+            }
+        }
+
+        // Removed: drawRectangle, drawCircle, floodFill, shiftGrid 
+        // These are no longer needed for pencil/eraser only functionality.
+
+        // --- Canvas Drawing and Rendering ---
+
+        function drawScene(targetCtx, targetCanvas, targetPixelSize, layersToRender) {
+            targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+            targetCtx.strokeStyle = '#e5e7eb'; 
+
+            for (let k = 0; k < layersToRender.length; k++) {
+                const layer = layersToRender[k];
+                if (!layer.visible) continue;
+
+                for (let y = 0; y < iconHeight; y++) {
+                    for (let x = 0; x < iconWidth; x++) {
+                        const is_set = layer.data[y][x];
+                        
+                        if (is_set) {
+                            // Darker color for active layer, lighter for background
+                            targetCtx.fillStyle = (targetCanvas.id === 'gridCanvas' && k === activeLayerIndex) ? '#000000' : '#4b5563'; 
+                            targetCtx.fillRect(x * targetPixelSize, y * targetPixelSize, targetPixelSize, targetPixelSize);
+                        }
+                    }
+                }
+            }
+
+            // Only draw preview and grid on the main editor canvas
+            if (targetCanvas.id === 'gridCanvas') {
+                if (previewPixels) {
+                    for (let y = 0; y < iconHeight; y++) {
+                        for (let x = 0; x < iconWidth; x++) {
+                            if (previewPixels[y][x]) {
+                                targetCtx.fillStyle = '#f59e0b'; // Amber for preview
+                                targetCtx.fillRect(x * targetPixelSize, y * targetPixelSize, targetPixelSize, targetPixelSize);
+                            }
+                        }
+                    }
+                }
+                
+                for (let y = 0; y <= iconHeight; y++) {
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(0, y * targetPixelSize);
+                    targetCtx.lineTo(targetCanvas.width, y * targetPixelSize);
+                    targetCtx.stroke();
+                }
+                for (let x = 0; x <= iconWidth; x++) {
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(x * targetPixelSize, 0);
+                    targetCtx.lineTo(x * targetPixelSize, targetCanvas.height);
+                    targetCtx.stroke();
+                }
+            }
+        }
+
+        // --- Frame Management (Unchanged) ---
+
+        function addFrame(duplicate = false) {
+            const newFrameIndex = frames.length;
+            let newLayers = [];
+
+            if (duplicate && frames.length > 0) {
+                // Deep copy layers from the active frame
+                const activeLayers = getActiveLayers();
+                newLayers = activeLayers.map(layer => ({
+                    name: layer.name,
+                    visible: layer.visible,
+                    data: JSON.parse(JSON.stringify(layer.data))
+                }));
+            } else {
+                // Create a blank frame with one default layer
+                newLayers = [{
+                    name: 'Base Layer',
+                    data: createBlankGrid(iconWidth, iconHeight),
+                    visible: true,
+                }];
+            }
+
+            frames.push({
+                name: `Frame ${newFrameIndex + 1}`,
+                layers: newLayers,
+            });
+            
+            selectFrame(newFrameIndex);
+        }
+
+        function selectFrame(index) {
+            if (index < 0 || index >= frames.length) return;
+            currentFrameIndex = index;
+            // Ensure layer index is valid for the new frame
+            activeLayerIndex = Math.min(activeLayerIndex, getActiveLayers().length - 1);
+            renderFrameList();
+            renderLayerList();
+            updateUI();
+        }
+
+        function removeFrame(index) {
+            if (frames.length > 1) {
+                frames.splice(index, 1);
+                if (currentFrameIndex >= index) {
+                    currentFrameIndex = Math.max(0, currentFrameIndex - 1);
+                }
+                selectFrame(currentFrameIndex); // Re-render and select
+            }
+        }
+
+        function renderFrameList() {
+            frameListDiv.innerHTML = '';
+            
+            frames.forEach((frame, index) => {
+                const item = document.createElement('div');
+                item.className = `item flex items-center justify-between p-2 rounded-lg cursor-pointer transition duration-100 ${index === currentFrameIndex ? 'active' : ''}`;
+                item.innerHTML = `
+                    <div class="flex items-center space-x-2 w-full">
+                        <span class="frame-name flex-1 text-sm font-medium truncate" data-index="${index}">
+                            ${frame.name} (#${index + 1}) ${index === currentFrameIndex ? '(Active)' : ''}
+                        </span>
+                    </div>
+                    <button class="delete-frame ml-2 p-1 text-sm text-red-500 rounded-md hover:bg-red-100" data-index="${index}" title="Delete Frame" ${frames.length === 1 ? 'disabled' : ''}>
+                        ${frames.length === 1 ? '🔒' : '❌'}
+                    </button>
+                `;
+
+                item.addEventListener('click', () => selectFrame(index));
+                item.querySelector('.delete-frame').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeFrame(index);
+                });
+                
+                frameListDiv.appendChild(item);
+            });
+            
+            currentFrameNumSpan.textContent = currentFrameIndex + 1;
+            totalFramesCountSpan.textContent = frames.length;
+            playerTotalFramesSpan.textContent = frames.length;
+            playerCurrentFrameSpan.textContent = (isPlaying ? frames.indexOf(currentAnimationFrame) : currentFrameIndex) + 1;
+
+            updateExportBytes();
+        }
+
+        // --- Layer Management (Unchanged) ---
+
+        function createNewLayer(name = `Layer ${getActiveLayers().length + 1}`, setActive = true) {
+            const layers = getActiveLayers();
+            const newLayer = {
+                name: name,
+                data: createBlankGrid(iconWidth, iconHeight),
+                visible: true,
+            };
+            layers.push(newLayer);
+            if (setActive) {
+                activeLayerIndex = layers.length - 1;
+            }
+            renderLayerList();
+            updateUI();
+        }
+
+        function renderLayerList() {
+            const layers = getActiveLayers();
+            layerListDiv.innerHTML = '';
+            
+            if (layers.length === 0) {
+                layerListDiv.innerHTML = '<p class="text-gray-500 text-sm p-2">No layers. Add a new layer.</p>';
+                activeLayerNameSpan.textContent = 'None';
+                return;
+            }
+            
+            // Render layers in reverse (top layer first)
+            layers.slice().reverse().forEach((layer, originalIndex) => {
+                const index = layers.length - 1 - originalIndex;
+                
+                const item = document.createElement('div');
+                item.className = `item flex items-center justify-between p-2 rounded-lg cursor-pointer transition duration-100 ${index === activeLayerIndex ? 'active' : ''}`;
+
+                // ... (Layer item HTML and event listeners are the same, updated to use 'item' class) ...
+                item.innerHTML = `
+                    <div class="flex items-center space-x-2 w-full">
+                        <button class="toggle-visibility p-1 text-sm rounded-md hover:bg-gray-300" data-index="${index}" title="Toggle Visibility">
+                            ${layer.visible ? '👁️' : '🚫'}
+                        </button>
+                        <span class="layer-name flex-1 text-sm font-medium truncate" data-index="${index}">
+                            ${layer.name} ${index === activeLayerIndex ? '(Active)' : ''}
+                        </span>
+                        <button class="edit-name p-1 text-sm rounded-md hover:bg-gray-300" data-index="${index}" title="Edit Name">
+                            ✏️
+                        </button>
+                    </div>
+                    <button class="delete-layer ml-2 p-1 text-sm text-red-500 rounded-md hover:bg-red-100" data-index="${index}" title="Delete Layer" ${layers.length === 1 ? 'disabled' : ''}>
+                        ${layers.length === 1 ? '🔒' : '❌'}
+                    </button>
+                `;
+
+                item.addEventListener('click', () => setActiveLayer(index));
+                item.querySelector('.toggle-visibility').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    layers[index].visible = !layers[index].visible;
+                    renderLayerList();
+                    updateUI();
+                });
+                item.querySelector('.delete-layer').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (layers.length > 1) {
+                        layers.splice(index, 1);
+                        if (activeLayerIndex >= index && activeLayerIndex > 0) {
+                            activeLayerIndex--;
+                        }
+                        renderLayerList();
+                        updateUI();
+                    }
+                });
+                item.querySelector('.edit-name').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const newName = prompt(`Enter new name for Layer ${index + 1}:`, layer.name);
+                    if (newName && newName.trim() !== '') {
+                        layers[index].name = newName.trim();
+                        renderLayerList();
+                    }
+                });
+                
+                layerListDiv.appendChild(item);
+            });
+            
+            if (layers.length > 0) {
+                activeLayerNameSpan.textContent = layers[activeLayerIndex].name;
+            }
+        }
+        
+        function setActiveLayer(index) {
+            activeLayerIndex = index;
+            renderLayerList();
+        }
+
+        // --- Update UI & Export (Unchanged) ---
+
+        function updateExportBytes() {
+            const frameBytes = generateBitmapBytes(mergeVisibleLayers(getActiveLayers()));
+            const singleSize = frameBytes.length;
+            const animationSize = singleSize * frames.length;
+            
+            singleFrameByteCountSpan.textContent = singleSize;
+            animationByteCountSpan.textContent = animationSize;
+
+            // Display single frame export by default
+            const singleFrameOutput = formatBytes(frameBytes, getActiveFrame().name);
+            byteOutputDiv.textContent = singleFrameOutput;
+        }
+
+        function updateUI() {
+            if (frames.length === 0) return;
+
+            // Render Editor Canvas
+            drawScene(ctx, canvas, pixelSize, getActiveLayers());
+            dimsText.textContent = `${iconWidth}x${iconHeight}`;
+
+            // Update Layer/Frame UI elements
+            renderFrameList();
+            renderLayerList();
+            updateExportBytes();
+
+            // Stop animation if player is showing but editor is used
+            if (isPlaying) stopAnimation();
+        }
+
+        // --- Drawing Handlers (Simplified) ---
+        // SHAPE_TOOLS is no longer defined or used.
+        const SIMPLE_TOOLS = ['pencil', 'eraser']; // Simplified to only include desired tools
+        
+        // This function is now effectively unused since shape/move tools are removed, 
+        // but it's kept as a stub to avoid errors in the drawing lifecycle.
+        function commitPreview(finalX, finalY) { 
+            if (!previewPixels) return;
+            // All complex tools removed, nothing to commit here.
+            previewPixels = null; 
+            layerSnapshot = null;
+        }
+
+        function handleStart(e) {
+            e.preventDefault();
+            if (frames.length === 0 || document.getElementById('editor').classList.contains('hidden')) return;
+            isDrawing = true;
+            const { x, y } = getPixelCoords(e);
+            startX = x; startY = y;
+            drawingState = (currentTool === 'eraser' ? 0 : 1); 
+            
+            if (currentTool === 'pencil' || currentTool === 'eraser') {
+                setPixel(getActiveLayers()[activeLayerIndex].data, x, y, drawingState); 
+            }
+            // Removed: floodFill, move, shape tool logic
+
+            updateUI();
+        }
+
+        function handleMove(e) {
+            e.preventDefault();
+            if (!isDrawing || frames.length === 0) return;
+            const { x, y } = getPixelCoords(e);
+            
+            if (currentTool === 'pencil' || currentTool === 'eraser') {
+                // Use drawLine to ensure continuous drawing, even if the mouse moves fast
+                drawLine(getActiveLayers()[activeLayerIndex].data, startX, startY, x, y, drawingState);
+                startX = x; startY = y;
+                // Since we modify the main data directly, we redraw the whole scene
+                drawScene(ctx, canvas, pixelSize, getActiveLayers());
+            }
+            // Removed: shape tool and move tool logic
+        }
+
+        function handleEnd(e) {
+            if (!isDrawing || frames.length === 0) return;
+            isDrawing = false;
+            // The drawing is already committed in handleMove for pencil/eraser.
+            
+            // NOTE: The original code had a call to commitPreview here for shape/move tools.
+            // Since those tools are removed, we can simplify this.
+            // const { x, y } = getPixelCoords(e);
+            // commitPreview(x, y); // No longer necessary for pencil/eraser
+            
+            startX = -1; startY = -1;
+            updateUI();
+        }
+
+        // --- Export & Import Logic (Unchanged) ---
+
+        function mergeVisibleLayers(layers) {
+            const composite = createBlankGrid(iconWidth, iconHeight);
+            for (let y = 0; y < iconHeight; y++) {
+                for (let x = 0; x < iconWidth; x++) {
+                    for (const layer of layers) {
+                        if (layer.visible && layer.data[y][x] === 1) {
+                            composite[y][x] = 1;
+                            break; 
+                        }
+                    }
+                }
+            }
+            return composite;
+        }
+
+        function generateBitmapBytes(compositeGrid) {
+            const h_banks = Math.ceil(iconWidth / 8); 
+            const byte_array = [];
+            for (let y = 0; y < iconHeight; y++) { 
+                for (let h_bank = 0; h_bank < h_banks; h_bank++) {
+                    let current_byte = 0x00;
+                    const start_x = h_bank * 8; 
+                    for (let bit_col = 0; bit_col < 8; bit_col++) {
+                        const x_bit = start_x + bit_col;
+                        if (x_bit < iconWidth) {
+                            let is_set = compositeGrid[y][x_bit]; 
+                            if (is_set) { current_byte |= (1 << bit_col); }
+                        }
+                    }
+                    byte_array.push(current_byte);
+                }
+            }
+            return byte_array;
+        }
+
+        function formatBytes(byte_array, name) {
+            let output = `// Frame: ${name} (${iconWidth}x${iconHeight}). Total Bytes: ${byte_array.length}\n`;
+            output += `const uint8_t FRAME_BITMAP[${byte_array.length}] = {\n    `;
+            for (let i = 0; i < byte_array.length; i++) {
+                const hex = '0x' + byte_array[i].toString(16).toUpperCase().padStart(2, '0');
+                output += hex;
+                if (i < byte_array.length - 1) { output += ', '; }
+                if ((i + 1) % 8 === 0 && i < byte_array.length - 1) { output += '\n    '; }
+            }
+            output += '\n};';
+            return output;
+        }
+
+        function formatAnimationBytes(animationBytes) {
+            const bytesPerFrame = animationBytes.length > 0 ? animationBytes[0].length : 0;
+            let output = `// Animation Frames: ${frames.length} frames of ${iconWidth}x${iconHeight}.\n`;
+            output += `// Total Data Size: ${frames.length * bytesPerFrame} bytes.\n`;
+            output += `const uint8_t ANIMATION_BITMAPS[${frames.length}][${bytesPerFrame}] = {\n`;
+
+            animationBytes.forEach((frameBytes, i) => {
+                output += `    // Frame ${i}: ${frames[i].name}\n    { `;
+                
+                for (let j = 0; j < frameBytes.length; j++) {
+                    const hex = '0x' + frameBytes[j].toString(16).toUpperCase().padStart(2, '0');
+                    output += hex;
+                    if (j < frameBytes.length - 1) { output += ', '; }
+                    if ((j + 1) % 8 === 0 && j < frameBytes.length - 1) { output += '\n      '; }
+                }
+                
+                output += ` }${i < animationBytes.length - 1 ? ',' : ''}\n`;
+            });
+
+            output += `};`;
+            return output;
+        }
+        
+        function parseBytes(arrayString) {
+            const regex = /0x[0-9a-fA-F]{1,2}|\d+/g;
+            const matches = arrayString.match(regex);
+            if (!matches) return [];
+            return matches.map(m => {
+                return m.startsWith('0x') ? parseInt(m, 16) : parseInt(m, 10);
+            }).filter(n => !isNaN(n) && n >= 0 && n <= 255);
+        }
+
+        function parseCArray(byte_array, width, height) {
+            const grid = createBlankGrid(width, height);
+            const h_banks = Math.ceil(width / 8);
+            if (byte_array.length !== h_banks * height) { return null; }
+            let byte_index = 0;
+            for (let y = 0; y < height; y++) {
+                for (let h_bank = 0; h_bank < h_banks; h_bank++) {
+                    const bank_data = byte_array[byte_index++];
+                    const start_x = h_bank * 8;
+                    for (let bit_col = 0; bit_col < 8; bit_col++) {
+                        const x = start_x + bit_col;
+                        if (x < width) {
+                            if (bank_data & (1 << bit_col)) { grid[y][x] = 1; }
+                        }
+                    }
+                }
+            }
+            return grid;
+        }
+
+        function handlePreview() {
+            const inputStr = arrayInput.value;
+            const w = iconWidth;
+            const h = iconHeight;
+            const expectedBytes = Math.ceil(w / 8) * h;
+            const bytes = parseBytes(inputStr);
+            
+            previewBytesSpan.textContent = `Bytes: ${bytes.length} (Expected: ${expectedBytes})`;
+
+            if (bytes.length === 0) { /* ... error handling ... */
+                previewErrorP.textContent = 'No valid hex/decimal bytes found.';
+                previewErrorP.classList.remove('hidden');
+                commitImportBtn.disabled = true;
+                commitImportBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                parsedGrid = null;
+                return;
+            }
+            if (bytes.length !== expectedBytes) { /* ... error handling ... */
+                previewErrorP.textContent = `Byte count mismatch: Found ${bytes.length}, expected ${expectedBytes} for ${w}x${h}.`;
+                previewErrorP.classList.remove('hidden');
+                commitImportBtn.disabled = true;
+                commitImportBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                parsedGrid = null;
+                return;
+            }
+            
+            parsedGrid = parseCArray(bytes, w, h);
+            
+            if (parsedGrid) {
+                drawPreview(parsedGrid, w, h);
+                previewErrorP.classList.add('hidden');
+                commitImportBtn.disabled = false;
+                commitImportBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else { /* ... error handling ... */
+                previewErrorP.textContent = 'Failed to generate grid from array.';
+                previewErrorP.classList.remove('hidden');
+                commitImportBtn.disabled = true;
+                commitImportBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+        
+        function drawPreview(grid, w, h) {
+            const canvasW = previewCanvas.width;
+            const canvasH = previewCanvas.height;
+            const size = Math.min(canvasW / w, canvasH / h);
+            previewCtx.clearRect(0, 0, canvasW, canvasH);
+            previewCtx.fillStyle = '#10b981'; 
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    if (grid[y][x] === 1) {
+                        previewCtx.fillRect(x * size, y * size, size, size);
+                    }
+                }
+            }
+        }
+        
+        function handleImport() {
+            if (parsedGrid && frames.length > 0) {
+                getActiveLayers()[activeLayerIndex].data = parsedGrid;
+                updateUI();
+                hideImportModal();
+            }
+        }
+
+        // --- Animation Player Logic (Unchanged) ---
+        let currentAnimationFrame = null;
+        let animationFrame = 0;
+
+        function animate(timestamp) {
+            if (!isPlaying) return;
+
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            const elapsed = timestamp - lastTimestamp;
+
+            if (elapsed > animationSpeed) {
+                animationFrame = (animationFrame + 1) % frames.length;
+                lastTimestamp = timestamp;
+                
+                currentAnimationFrame = frames[animationFrame];
+                playerCurrentFrameSpan.textContent = animationFrame + 1;
+                
+                // Draw the composite of the current animation frame's layers
+                drawScene(playerCtx, playerCanvas, pixelSize, currentAnimationFrame.layers);
+            }
+
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function playAnimation() {
+            if (frames.length < 2) {
+                // Use a custom modal or message box instead of alert()
+                console.warn('Need at least 2 frames to animate.');
+                return; 
+            }
+            if (isPlaying) return;
+
+            isPlaying = true;
+            playStopBtn.innerHTML = '❚❚'; // Pause symbol
+            playStopBtn.classList.replace('bg-red-500', 'bg-yellow-500');
+            lastTimestamp = 0;
+            animationFrame = currentFrameIndex;
+            animationSpeed = parseInt(speedInput.value, 10) || 250;
+            currentAnimationFrame = frames[animationFrame];
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function stopAnimation() {
+            if (!isPlaying) return;
+
+            isPlaying = false;
+            playStopBtn.innerHTML = '▶'; // Play symbol
+            playStopBtn.classList.replace('bg-yellow-500', 'bg-red-500');
+            cancelAnimationFrame(animationFrameId);
+            
+            // Set player canvas to display the last viewed frame from the editor
+            drawScene(playerCtx, playerCanvas, pixelSize, getActiveLayers());
+            playerCurrentFrameSpan.textContent = currentFrameIndex + 1;
+        }
+
+        function navigateFrame(direction) {
+            stopAnimation(); // Stop animation when manually navigating
+            currentFrameIndex = (currentFrameIndex + direction + frames.length) % frames.length;
+            selectFrame(currentFrameIndex);
+        }
+
+        // --- Initialization and Event Binding (Unchanged) ---
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-page').forEach(page => page.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active-tab'));
+            document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active-tab');
+
+            if (tabId === 'editor') {
+                updateUI();
+            } else if (tabId === 'player') {
+                stopAnimation();
+                // Initialize player canvas with the currently selected frame
+                drawScene(playerCtx, playerCanvas, pixelSize, getActiveLayers());
+                playerCurrentFrameSpan.textContent = currentFrameIndex + 1;
+            }
+        }
+
+        function initTools() {
+            toolPanelDiv.innerHTML = '';
+            TOOLS.forEach(tool => {
+                const btn = document.createElement('button');
+                btn.id = `tool-${tool.id}`;
+                btn.className = `tool-btn p-3 rounded-xl transition duration-150 text-xl font-bold border border-gray-300 ${tool.id === currentTool ? 'active' : 'bg-gray-200 hover:bg-gray-300'}`;
+                btn.innerHTML = tool.icon;
+                btn.title = tool.name;
+                btn.addEventListener('click', () => {
+                    currentTool = tool.id;
+                    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    canvas.style.cursor = tool.cursor;
+                });
+                toolPanelDiv.appendChild(btn);
+            });
+            canvas.style.cursor = TOOLS.find(t => t.id === currentTool).cursor;
+        }
+
+        function initEditor(width, height) {
+            iconWidth = width;
+            iconHeight = height;
+
+            pixelSize = MAX_CANVAS_WIDTH / iconWidth; 
+            
+            canvas.width = MAX_CANVAS_WIDTH;
+            canvas.height = MAX_CANVAS_WIDTH * (iconHeight / iconWidth); 
+            playerCanvas.width = MAX_CANVAS_WIDTH;
+            playerCanvas.height = MAX_CANVAS_WIDTH * (iconHeight / iconWidth); 
+
+            // Create initial frame and layer if resizing resets everything
+            if (frames.length === 0) {
+                addFrame(); // Adds Frame 1 with Base Layer
+            } else {
+                // Ensure existing frames/layers are resized (cleared)
+                frames.forEach(frame => {
+                    frame.layers.forEach(layer => {
+                        layer.data = createBlankGrid(iconWidth, iconHeight);
+                    });
+                });
+            }
+
+            renderFrameList();
+            renderLayerList();
+            updateUI();
+        }
+
+        // Bind Drawing Events
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('mousemove', handleMove);
+        document.addEventListener('mouseup', handleEnd); 
+        canvas.addEventListener('touchstart', handleStart);
+        canvas.addEventListener('touchmove', handleMove);
+        document.addEventListener('touchend', handleEnd);
+
+        // Bind Controls
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            if (frames.length > 0) {
+                getActiveLayers()[activeLayerIndex].data = createBlankGrid(iconWidth, iconHeight);
+                updateUI();
+            }
+        });
+        
+        document.getElementById('applyResBtn').addEventListener('click', () => {
+            const w = parseInt(inputWidth.value, 10);
+            const h = parseInt(inputHeight.value, 10);
+            if (isNaN(w) || w < 1 || w > 84 || isNaN(h) || h < 1 || h > 48) { return; }
+            initEditor(w, h); 
+        });
+        
+        document.getElementById('newLayerBtn').addEventListener('click', () => {
+            if (frames.length > 0) createNewLayer();
+        });
+        document.getElementById('newFrameBtn').addEventListener('click', () => {
+            addFrame(true); // Duplicate current frame
+        });
+
+        // Export Buttons
+        copySingleFrameBtn.addEventListener('click', () => {
+            const frameBytes = generateBitmapBytes(mergeVisibleLayers(getActiveLayers()));
+            const singleFrameOutput = formatBytes(frameBytes, getActiveFrame().name);
+            byteOutputDiv.textContent = singleFrameOutput;
+            // Use document.execCommand('copy') for clipboard (omitted full logic for brevity)
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = singleFrameOutput;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+            copySingleFrameBtn.textContent = 'Copied!';
+            setTimeout(() => copySingleFrameBtn.textContent = `Copy Single Frame Array (${frameBytes.length} bytes)`, 2000);
+        });
+        
+        copyAnimationBtn.addEventListener('click', () => {
+            const allAnimationBytes = frames.map(frame => generateBitmapBytes(mergeVisibleLayers(frame.layers)));
+            const animationOutput = formatAnimationBytes(allAnimationBytes);
+            byteOutputDiv.textContent = animationOutput;
+            // Use document.execCommand('copy') for clipboard (omitted full logic for brevity)
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = animationOutput;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+            copyAnimationBtn.textContent = 'Copied!';
+            const totalBytes = allAnimationBytes.length * (allAnimationBytes[0]?.length || 0);
+            setTimeout(() => copyAnimationBtn.textContent = `Copy Animation Array (${totalBytes} bytes)`, 2000);
+        });
+
+        // Modal Bindings
+        mainImportBtn.addEventListener('click', showImportModal);
+        cancelImportBtn.addEventListener('click', () => { hideImportModal(); updateUI(); }); // Ensure UI updates on cancel
+        previewArrayBtn.addEventListener('click', handlePreview);
+        commitImportBtn.addEventListener('click', handleImport);
+
+        // Player Bindings
+        playStopBtn.addEventListener('click', () => isPlaying ? stopAnimation() : playAnimation());
+        nextFrameBtn.addEventListener('click', () => navigateFrame(1));
+        prevFrameBtn.addEventListener('click', () => navigateFrame(-1));
+        speedInput.addEventListener('input', (e) => {
+            animationSpeed = parseInt(e.target.value, 10);
+            if (isPlaying) {
+                stopAnimation();
+                playAnimation(); // Restart with new speed
+            }
+        });
+
+        // Tab Bindings
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+
+        function showImportModal() {
+            if (frames.length === 0) { addFrame(); }
+            importModal.classList.remove('hidden');
+            previewErrorP.classList.add('hidden');
+            commitImportBtn.disabled = true;
+            commitImportBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            previewDimsSpan.textContent = `W: ${iconWidth} H: ${iconHeight}`;
+            previewBytesSpan.textContent = `Bytes: ${Math.ceil(iconWidth / 8) * iconHeight} (Expected)`;
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            arrayInput.focus();
+            arrayInput.select();
+        }
+        function hideImportModal() {
+            importModal.classList.add('hidden');
+            arrayInput.value = '';
+            parsedGrid = null;
+        }
+
+        // --- Initial Load ---
+        window.onload = function() {
+            initTools();
+            initEditor(parseInt(inputWidth.value, 10), parseInt(inputHeight.value, 10)); 
+            switchTab('editor'); // Start on the editor tab
+        };
+    </script>
+</body>
+</html>
