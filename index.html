@@ -6,14 +6,20 @@
     <title>Pixel Animation Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Base styles */
-        body { font-family: 'Inter', sans-serif; }
-        .editor-container { max-width: 1200px; }
+        /* Base styles & Dark Yellowish Theme */
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #1c1917; /* Stone 900 - Dark Base */
+            color: #f5f5f4; /* Stone 100 - Primary Text */
+        }
+        .editor-container { max-width: 1400px; }
+        .bg-panel { background-color: #292524; /* Stone 800 - Panel Background */ }
+        .text-accent { color: #f59e0b; /* Amber 500 - Accent Color */ }
 
-        /* Canvas styles */
+        /* Canvas styles - Monochrome Display */
         #gridCanvas, #playerCanvas {
-            border: 2px solid #374151;
-            background-color: #f3f4f6;
+            border: 2px solid #a1a1aa; /* Stone 400 */
+            background-color: #e5e5e5; /* Very light grey/off-white (Monochrome screen) */
             touch-action: none;
             image-rendering: crisp-edges;
             image-rendering: pixelated;
@@ -21,28 +27,48 @@
             height: auto;
         }
 
-        /* Tab styles */
+        /* Tab styles (Solid buttons, less rounded) */
         .tab-btn {
-            @apply px-4 py-2 font-semibold text-gray-600 border-b-2 border-transparent transition-colors;
+            @apply px-5 py-2 font-bold text-stone-400 border-b-4 border-transparent transition-colors bg-stone-900/50 hover:text-amber-500 hover:border-amber-500 rounded-none;
         }
         .tab-btn.active-tab {
-            @apply text-indigo-600 border-indigo-600;
+            @apply text-amber-500 border-amber-500 bg-panel shadow-inner rounded-t-md;
         }
 
-        /* Tool active state */
+        /* Tool active state - Boxy and defined */
+        .tool-btn {
+            @apply bg-stone-700 text-stone-200 hover:bg-stone-600 transition-colors border-2 border-stone-600 rounded-md;
+        }
         .tool-btn.active {
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
-            background-color: #3b82f6;
-            color: white;
+            box-shadow: 0 0 0 3px #f59e0b; /* Amber shadow */
+            background-color: #f59e0b; 
+            color: #1c1917; /* Dark text on amber */
+            border-color: #f59e0b;
         }
 
         /* Layer/Frame item focus/active */
+        .item { @apply rounded-md transition duration-100; }
         .item.active {
-            background-color: #e0f2fe; 
-            border-left: 4px solid #3b82f6;
+            background-color: #44403c; /* Stone 700 */
+            border-left: 4px solid #f59e0b;
         }
-        .item:hover {
-            background-color: #f3f4f6;
+        .item:hover:not(.active) {
+            background-color: #292524; 
+        }
+
+        /* Utility buttons - Solid box style */
+        .action-btn {
+            @apply px-4 py-2 font-semibold rounded-md shadow-lg transition-colors text-sm border-2 border-transparent;
+        }
+
+        /* Export control buttons */
+        .export-control-btn {
+            @apply px-4 py-2 font-semibold rounded-md shadow-lg transition-colors text-sm border-2 border-stone-500;
+        }
+        
+        /* Input fields */
+        input[type="number"] {
+            @apply rounded-md;
         }
 
         /* Output text */
@@ -51,173 +77,207 @@
             white-space: pre-wrap;
             word-wrap: break-word;
         }
-
-        /* Modal specific styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-4 md:p-8 flex justify-center">
+<body class="bg-theme-main min-h-screen p-4 md:p-8 flex justify-center">
 
     <div class="editor-container w-full">
-        <h1 class="text-3xl font-extrabold text-gray-800 mb-4">Pixel Animation Studio</h1>
+        <h1 class="text-3xl font-extrabold text-stone-100 mb-4">Pixel Animation Studio</h1>
 
-        <div class="flex border-b mb-6">
+        <!-- Tabs -->
+        <div class="flex border-b border-stone-700 mb-6">
             <button class="tab-btn active-tab" data-tab="editor">Single Frame Editor</button>
             <button class="tab-btn" data-tab="player">Animation Player</button>
         </div>
 
+        <!-- Tab Content -->
         <div id="tab-content">
             
+            <!-- Editor Tab Content -->
             <div id="editor" class="tab-page">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     
+                    <!-- LEFT PANEL: Tools and Config (col-span-3) -->
                     <div class="lg:col-span-3 space-y-6">
                         
-                        <div class="bg-white p-4 rounded-xl shadow-lg">
-                            <h2 class="text-xl font-semibold mb-3 text-gray-700">Tools</h2>
+                        <!-- Tools -->
+                        <div class="bg-panel p-4 rounded-xl">
+                            <h2 class="text-xl font-semibold mb-3 text-stone-100">Tools</h2>
                             <div id="toolPanel" class="grid grid-cols-4 gap-2">
-                                </div>
+                                <!-- Tools injected here -->
+                            </div>
                         </div>
 
-                        <div class="bg-white p-4 rounded-xl shadow-lg">
-                            <h2 class="text-xl font-semibold mb-3 text-gray-700">Config</h2>
+                        <!-- Config -->
+                        <div class="bg-panel p-4 rounded-xl">
+                            <h2 class="text-xl font-semibold mb-3 text-stone-100">Config</h2>
                             <div class="mb-4">
-                                <label for="iconWidth" class="block text-sm font-medium text-gray-700">Width (X)</label>
-                                <input type="number" id="iconWidth" value="16" min="1" max="84" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                                <label for="iconWidth" class="block text-sm font-medium text-stone-300">Width (X)</label>
+                                <input type="number" id="iconWidth" value="16" min="1" max="84" class="mt-1 block w-full rounded-md border-stone-600 bg-stone-700 text-stone-100 shadow-sm p-2 border">
                             </div>
                             <div class="mb-4">
-                                <label for="iconHeight" class="block text-sm font-medium text-gray-700">Height (Y)</label>
-                                <input type="number" id="iconHeight" value="16" min="1" max="48" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
-                                <p class="text-xs text-gray-500 mt-1">Export is Row-Major (Y, Bank, Bit).</p>
+                                <label for="iconHeight" class="block text-sm font-medium text-stone-300">Height (Y)</label>
+                                <input type="number" id="iconHeight" value="16" min="1" max="48" class="mt-1 block w-full rounded-md border-stone-600 bg-stone-700 text-stone-100 shadow-sm p-2 border">
+                                <p class="text-xs text-stone-400 mt-1">Export is Row-Major (Y, Bank, Bit).</p>
                             </div>
-                            <button id="applyResBtn" class="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors">
+                            <button id="applyResBtn" class="action-btn w-full bg-amber-600 text-stone-900 hover:bg-amber-500 border-amber-700">
                                 Apply Resolution
                             </button>
                         </div>
                     </div>
 
-                    <div class="lg:col-span-6 bg-white p-6 rounded-xl shadow-lg flex flex-col items-center">
-                        <h2 class="text-xl font-semibold text-gray-700 mb-4">
-                            Frame <span id="currentFrameNum">1</span> (<span id="dimsText">16x16</span>)
+                    <!-- CENTER PANEL: Canvas (col-span-6) -->
+                    <div class="lg:col-span-6 bg-panel p-6 rounded-xl flex flex-col items-center">
+                        <h2 class="text-xl font-semibold text-stone-100 mb-4">
+                            Frame <span id="currentFrameNum" class="text-accent">1</span> (<span id="dimsText">16x16</span>)
                         </h2>
                         <div class="max-w-full overflow-hidden">
                             <canvas id="gridCanvas" width="512" height="512"></canvas>
                         </div>
                         
                         <div class="mt-4 flex space-x-4">
-                            <button id="clearBtn" class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600 transition-colors">
+                            <button id="clearBtn" class="action-btn bg-red-600 text-white hover:bg-red-500 border-red-700">
                                 Clear Active Layer
                             </button>
-                            <button id="importBtn" class="px-4 py-2 bg-purple-500 text-white font-semibold rounded-lg shadow-md hover:bg-purple-600 transition-colors">
+                            <button id="importBtn" class="action-btn bg-purple-600 text-white hover:bg-purple-500 border-purple-700">
                                 Paste & Import C Array
                             </button>
                         </div>
                     </div>
 
+                    <!-- RIGHT PANEL: Frames and Layers (col-span-3) -->
                     <div class="lg:col-span-3 space-y-6">
 
-                        <div class="bg-white p-4 rounded-xl shadow-lg">
-                            <h2 class="text-xl font-semibold mb-3 text-gray-700">Frames (<span id="totalFramesCount">1</span>)</h2>
-                            <div id="frameList" class="space-y-1 max-h-32 overflow-y-auto mb-4">
+                        <!-- Frame Selector -->
+                        <div class="bg-panel p-4 rounded-xl">
+                            <h2 class="text-xl font-semibold mb-3 text-stone-100">Frames (<span id="totalFramesCount" class="text-accent">1</span>)</h2>
+                            <div class="flex justify-between items-center mb-2">
+                                <p class="text-sm font-medium text-stone-300">Sequence List</p>
+                                <div id="frameNav" class="flex space-x-2">
+                                    <button id="moveFrameUpBtn" class="p-1 text-lg text-amber-500 hover:text-amber-300 disabled:opacity-50" title="Move Frame Up (Earlier)">
+                                        ▲
+                                    </button>
+                                    <button id="moveFrameDownBtn" class="p-1 text-lg text-amber-500 hover:text-amber-300 disabled:opacity-50" title="Move Frame Down (Later)">
+                                        ▼
+                                    </button>
                                 </div>
-                            <button id="newFrameBtn" class="w-full px-4 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition-colors">
-                                + Add/Duplicate Frame
-                            </button>
+                            </div>
+                            <div id="frameList" class="space-y-1 max-h-32 overflow-y-auto mb-4 border border-stone-700 p-2 rounded-lg">
+                                <!-- Frames injected here -->
+                            </div>
+                            <div class="flex space-x-2">
+                                <button id="duplicateFrameBtn" class="action-btn flex-1 bg-green-600 text-white hover:bg-green-500 border-green-700">
+                                    Duplicate Frame
+                                </button>
+                                <button id="blankFrameBtn" class="action-btn flex-1 bg-amber-600 text-stone-900 hover:bg-amber-500 border-amber-700">
+                                    + Blank Frame
+                                </button>
+                            </div>
                         </div>
                         
-                        <div class="bg-white p-4 rounded-xl shadow-lg">
-                            <h2 class="text-xl font-semibold mb-3 text-gray-700">Layers (Active: <span id="activeLayerName">Base Layer</span>)</h2>
-                            <div id="layerList" class="space-y-1 max-h-40 overflow-y-auto mb-4">
-                                </div>
-                            <button id="newLayerBtn" class="w-full px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition-colors">
+                        <!-- Layers -->
+                        <div class="bg-panel p-4 rounded-xl">
+                            <h2 class="text-xl font-semibold mb-3 text-stone-100">Layers (Active: <span id="activeLayerName" class="text-accent">Base Layer</span>)</h2>
+                            <div id="layerList" class="space-y-1 max-h-40 overflow-y-auto mb-4 border border-stone-700 p-2 rounded-lg">
+                                <!-- Layers injected here -->
+                            </div>
+                            <button id="newLayerBtn" class="action-btn w-full bg-blue-600 text-white hover:bg-blue-500 border-blue-700">
                                 + New Layer
                             </button>
                         </div>
                     </div>
 
+                    <!-- Export Panel (Full Width) -->
                     <div class="lg:col-span-12">
-                        <div class="bg-gray-800 p-4 rounded-xl shadow-lg text-white">
+                        <div class="bg-stone-900 p-4 rounded-xl shadow-lg text-white border border-stone-700">
                             <h2 class="text-xl font-semibold mb-3">C Array Export (Row-Major)</h2>
+                            
+                            <!-- Generation Buttons -->
                             <div class="flex space-x-4 mb-3">
-                                <button id="copySingleFrameBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg transition duration-150 text-sm">
-                                    Copy Single Frame Array (<span id="singleFrameByteCount">0</span> bytes)
+                                <button id="generateSingleFrameBtn" class="action-btn flex-1 bg-lime-600 text-stone-900 hover:bg-lime-500 border-lime-700">
+                                    Generate Single Frame Array (<span id="singleFrameByteCount">0</span> bytes)
                                 </button>
-                                <button id="copyAnimationBtn" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-gray-900 font-bold py-2 px-3 rounded-lg transition duration-150 text-sm">
-                                    Copy Animation Array (<span id="animationByteCount">0</span> bytes)
+                                <button id="generateAnimationBtn" class="action-btn flex-1 bg-amber-600 text-stone-900 hover:bg-amber-500 border-amber-700">
+                                    Generate Animation Array (<span id="animationByteCount">0</span> bytes)
                                 </button>
                             </div>
-                            <div id="byteOutput" class="pixel-output text-yellow-400 text-xs h-32 overflow-y-auto p-2 bg-black rounded-md">
-                                Generated code will appear here.
+
+                            <!-- Output Area -->
+                            <div id="outputContainer" class="hidden">
+                                <div id="byteOutput" class="pixel-output text-amber-300 text-xs h-32 overflow-y-auto p-2 bg-black rounded-md border border-stone-700 mb-3">
+                                    Generated code will appear here.
+                                </div>
+                                
+                                <div class="flex justify-end space-x-3">
+                                    <button id="copyOutputBtn" class="export-control-btn bg-stone-700 text-stone-100 hover:bg-stone-600">
+                                        Copy to Clipboard
+                                    </button>
+                                    <button id="exportCFileBtn" class="export-control-btn bg-blue-600 text-white hover:bg-blue-500">
+                                        Export (Download .c file)
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Animation Player Tab Content -->
             <div id="player" class="tab-page hidden">
-                <div class="flex flex-col items-center p-6 bg-white rounded-xl shadow-lg">
-                    <h2 class="text-2xl font-bold mb-4 text-gray-800">Animation Preview</h2>
+                <div class="flex flex-col items-center p-6 bg-panel rounded-xl">
+                    <h2 class="text-2xl font-bold mb-4 text-stone-100">Animation Preview</h2>
                     <canvas id="playerCanvas" width="512" height="512"></canvas>
                     <div class="mt-6 flex items-center space-x-6">
                         
-                        <label for="speedInput" class="text-sm font-medium text-gray-700">Speed (ms/Frame):</label>
-                        <input type="number" id="speedInput" value="250" min="50" max="1000" step="50" class="w-20 p-2 border rounded-lg text-center">
+                        <label for="speedInput" class="text-sm font-medium text-stone-300">Speed (ms/Frame):</label>
+                        <input type="number" id="speedInput" value="250" min="50" max="1000" step="50" class="w-20 p-2 border rounded-md text-center bg-stone-700 text-stone-100 border-stone-600">
 
-                        <button id="prevFrameBtn" class="p-3 bg-gray-200 hover:bg-gray-300 rounded-full transition-colors text-xl font-bold" title="Previous Frame">
+                        <button id="prevFrameBtn" class="p-3 bg-stone-700 text-stone-100 hover:bg-stone-600 rounded-md transition-colors text-xl font-bold border border-stone-600" title="Previous Frame">
                             ◀
                         </button>
-                        <button id="playStopBtn" class="p-4 bg-red-500 text-white hover:bg-red-600 rounded-full transition-colors text-2xl font-bold shadow-lg" title="Play/Stop">
+                        <button id="playStopBtn" class="p-4 bg-red-600 text-white hover:bg-red-500 rounded-md transition-colors text-2xl font-bold shadow-lg border border-red-700" title="Play/Stop">
                             ▶
                         </button>
-                        <button id="nextFrameBtn" class="p-3 bg-gray-200 hover:bg-gray-300 rounded-full transition-colors text-xl font-bold" title="Next Frame">
+                        <button id="nextFrameBtn" class="p-3 bg-stone-700 text-stone-100 hover:bg-stone-600 rounded-md transition-colors text-xl font-bold border border-stone-600" title="Next Frame">
                             ▶
                         </button>
                     </div>
-                    <p class="mt-4 text-lg font-medium text-gray-700">
-                        Current Frame: <span id="playerCurrentFrame">1</span> / <span id="playerTotalFrames">1</span>
+                    <p class="mt-4 text-lg font-medium text-stone-100">
+                        Current Frame: <span id="playerCurrentFrame" class="text-accent">1</span> / <span id="playerTotalFrames" class="text-accent">1</span>
                     </p>
                 </div>
             </div>
 
-        </div> </div>
+        </div> <!-- End Tab Content -->
+    </div>
 
+    <!-- Import Modal (updated for theme) -->
     <div id="importModal" class="modal-overlay hidden">
-        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-lg">
-            <h2 class="text-2xl font-bold mb-4 text-gray-800">Import C Array Data</h2>
+        <div class="bg-panel p-6 rounded-xl shadow-2xl w-full max-w-lg">
+            <h2 class="text-2xl font-bold mb-4 text-stone-100">Import C Array Data</h2>
             
-            <textarea id="arrayInput" class="w-full h-32 p-3 border border-gray-300 rounded-lg font-mono text-sm resize-none focus:ring-blue-500 focus:border-blue-500" placeholder="Paste your const uint8_t array here..."></textarea>
+            <textarea id="arrayInput" class="w-full h-32 p-3 border border-stone-600 bg-stone-700 text-stone-100 rounded-md font-mono text-sm resize-none focus:ring-amber-500 focus:border-amber-500" placeholder="Paste your const uint8_t array here..."></textarea>
             
             <div class="flex items-center justify-between mt-3 mb-4">
-                <button id="previewArrayBtn" class="px-4 py-2 bg-orange-500 text-white font-semibold rounded-lg shadow-md hover:bg-orange-600 transition-colors">
+                <button id="previewArrayBtn" class="action-btn bg-amber-600 text-stone-900 hover:bg-amber-500 border-amber-700">
                     Preview Array
                 </button>
-                <div class="text-sm text-gray-600">
+                <div class="text-sm text-stone-300">
                     <span id="previewDims">W: ? H: ?</span> | <span id="previewBytes">Bytes: ?</span>
                 </div>
             </div>
 
-            <div class="text-center mb-4 p-2 border border-dashed border-gray-300 rounded-lg">
-                <h3 class="text-lg font-medium mb-2">Preview</h3>
-                <canvas id="previewCanvas" width="128" height="128" class="border border-gray-400 mx-auto" style="image-rendering: pixelated;"></canvas>
+            <div class="text-center mb-4 p-2 border border-dashed border-stone-600 rounded-lg">
+                <h3 class="text-lg font-medium mb-2 text-stone-100">Preview</h3>
+                <canvas id="previewCanvas" width="128" height="128" class="border border-stone-400 mx-auto" style="image-rendering: pixelated;"></canvas>
                 <p id="previewError" class="text-red-500 mt-2 text-sm hidden">Error during parsing.</p>
             </div>
 
             <div class="flex justify-end space-x-3">
-                <button id="cancelImportBtn" class="px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition-colors">
+                <button id="cancelImportBtn" class="action-btn bg-stone-600 text-stone-100 hover:bg-stone-500 border-stone-700">
                     Cancel
                 </button>
-                <button id="commitImportBtn" disabled class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md opacity-50 cursor-not-allowed transition-colors">
+                <button id="commitImportBtn" disabled class="action-btn bg-green-600 text-white opacity-50 cursor-not-allowed border-green-700">
                     Import to Active Layer
                 </button>
             </div>
@@ -237,7 +297,7 @@
         let currentTool = 'pencil';
         
         let isDrawing = false; 
-        let drawingState = 1; // 1 for drawing, 0 for erasing
+        let drawingState = 1; // 1 for drawing, 0 for erasing (for black pixel mode: 1 means pixel is ON)
         
         let startX = -1, startY = -1; 
         let previewPixels = null; 
@@ -248,12 +308,13 @@
         let animationSpeed = 250; // ms per frame
         let lastTimestamp = 0;
         let animationFrameId = null; 
+        let currentAnimationFrame = null;
+        let animationFrame = 0;
 
-        // Tool definitions - MODIFIED to only include Pencil and Eraser
+        // Tool definitions
         const TOOLS = [
-            { id: 'pencil', name: 'Pencil', icon: '✎', cursor: 'crosshair' },
-            { id: 'eraser', name: 'Eraser', icon: '🧼', cursor: 'cell' },
-            // Removed: line, rectangle, circle, move, fill
+            { id: 'pencil', name: 'Pencil (Black)', icon: '✏️', cursor: 'crosshair' },
+            { id: 'eraser', name: 'Eraser (White)', icon: '🧼', cursor: 'cell' },
         ];
 
         // --- DOM Elements ---
@@ -282,10 +343,13 @@
         const playerCurrentFrameSpan = document.getElementById('playerCurrentFrame');
         const playerTotalFramesSpan = document.getElementById('playerTotalFrames');
 
-        // Export Buttons
-        const copySingleFrameBtn = document.getElementById('copySingleFrameBtn');
-        const copyAnimationBtn = document.getElementById('copyAnimationBtn');
-
+        // Generation and Export Elements (NEW/RENAMED)
+        const generateSingleFrameBtn = document.getElementById('generateSingleFrameBtn');
+        const generateAnimationBtn = document.getElementById('generateAnimationBtn');
+        const outputContainer = document.getElementById('outputContainer');
+        const copyOutputBtn = document.getElementById('copyOutputBtn');
+        const exportCFileBtn = document.getElementById('exportCFileBtn');
+        
         // Modal Elements (omitted for brevity, assume linked)
         const importModal = document.getElementById('importModal');
         const arrayInput = document.getElementById('arrayInput');
@@ -298,6 +362,13 @@
         const previewBytesSpan = document.getElementById('previewBytes');
         const previewErrorP = document.getElementById('previewError');
         const mainImportBtn = document.getElementById('importBtn');
+
+        // Frame Buttons
+        const duplicateFrameBtn = document.getElementById('duplicateFrameBtn');
+        const blankFrameBtn = document.getElementById('blankFrameBtn');
+        const moveFrameUpBtn = document.getElementById('moveFrameUpBtn');
+        const moveFrameDownBtn = document.getElementById('moveFrameDownBtn');
+
 
         // --- Core State Accessors ---
 
@@ -338,7 +409,6 @@
             }
         }
         
-        // --- Drawing Algorithms (Kept only drawLine for line support in pencil/eraser) ---
         function drawLine(grid, x0, y0, x1, y1, value) {
             const dx = Math.abs(x1 - x0);
             const dy = Math.abs(y1 - y0);
@@ -354,26 +424,43 @@
             }
         }
 
-        // Removed: drawRectangle, drawCircle, floodFill, shiftGrid 
-        // These are no longer needed for pencil/eraser only functionality.
-
-        // --- Canvas Drawing and Rendering ---
+        // --- Canvas Drawing and Rendering (Monochrome update) ---
 
         function drawScene(targetCtx, targetCanvas, targetPixelSize, layersToRender) {
+            // Background is handled by CSS: #e5e5e5
             targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
-            targetCtx.strokeStyle = '#e5e7eb'; 
+            targetCtx.strokeStyle = '#bdbdbd'; // Slightly darker grid lines on light background
 
+            // --- 1. Onion Skinning (Previous Frame) ---
+            if (targetCanvas.id === 'gridCanvas' && frames.length > 1 && currentFrameIndex > 0) {
+                const prevFrameIndex = (currentFrameIndex - 1);
+                const prevFrameLayers = frames[prevFrameIndex].layers;
+                const prevComposite = mergeVisibleLayers(prevFrameLayers);
+                
+                targetCtx.fillStyle = 'rgba(0, 0, 0, 0.1)'; // Very light transparent black for ghosting
+                
+                for (let y = 0; y < iconHeight; y++) {
+                    for (let x = 0; x < iconWidth; x++) {
+                        if (prevComposite[y][x]) {
+                            targetCtx.fillRect(x * targetPixelSize, y * targetPixelSize, targetPixelSize, targetPixelSize);
+                        }
+                    }
+                }
+            }
+            
+            // --- 2. Current Frame Layers ---
             for (let k = 0; k < layersToRender.length; k++) {
                 const layer = layersToRender[k];
                 if (!layer.visible) continue;
+
+                // Use BLACK for the main pixel color
+                targetCtx.fillStyle = '#000000'; 
 
                 for (let y = 0; y < iconHeight; y++) {
                     for (let x = 0; x < iconWidth; x++) {
                         const is_set = layer.data[y][x];
                         
                         if (is_set) {
-                            // Darker color for active layer, lighter for background
-                            targetCtx.fillStyle = (targetCanvas.id === 'gridCanvas' && k === activeLayerIndex) ? '#000000' : '#4b5563'; 
                             targetCtx.fillRect(x * targetPixelSize, y * targetPixelSize, targetPixelSize, targetPixelSize);
                         }
                     }
@@ -386,13 +473,15 @@
                     for (let y = 0; y < iconHeight; y++) {
                         for (let x = 0; x < iconWidth; x++) {
                             if (previewPixels[y][x]) {
-                                targetCtx.fillStyle = '#f59e0b'; // Amber for preview
+                                targetCtx.fillStyle = '#cc0000'; // Dark red for preview
                                 targetCtx.fillRect(x * targetPixelSize, y * targetPixelSize, targetPixelSize, targetPixelSize);
                             }
                         }
                     }
                 }
                 
+                // Draw Grid
+                targetCtx.strokeStyle = '#bdbdbd'; 
                 for (let y = 0; y <= iconHeight; y++) {
                     targetCtx.beginPath();
                     targetCtx.moveTo(0, y * targetPixelSize);
@@ -408,14 +497,24 @@
             }
         }
 
-        // --- Frame Management (Unchanged) ---
+        // --- Frame Management (Unchanged logic) ---
 
-        function addFrame(duplicate = false) {
+        function moveFrame(direction) {
+            const oldIndex = currentFrameIndex;
+            const newIndex = oldIndex + direction;
+
+            if (newIndex >= 0 && newIndex < frames.length) {
+                const frameToMove = frames.splice(oldIndex, 1)[0];
+                frames.splice(newIndex, 0, frameToMove);
+                selectFrame(newIndex);
+            }
+        }
+
+        function addFrame(isDuplicate = false) {
             const newFrameIndex = frames.length;
             let newLayers = [];
 
-            if (duplicate && frames.length > 0) {
-                // Deep copy layers from the active frame
+            if (isDuplicate && frames.length > 0) {
                 const activeLayers = getActiveLayers();
                 newLayers = activeLayers.map(layer => ({
                     name: layer.name,
@@ -423,7 +522,6 @@
                     data: JSON.parse(JSON.stringify(layer.data))
                 }));
             } else {
-                // Create a blank frame with one default layer
                 newLayers = [{
                     name: 'Base Layer',
                     data: createBlankGrid(iconWidth, iconHeight),
@@ -442,8 +540,11 @@
         function selectFrame(index) {
             if (index < 0 || index >= frames.length) return;
             currentFrameIndex = index;
-            // Ensure layer index is valid for the new frame
             activeLayerIndex = Math.min(activeLayerIndex, getActiveLayers().length - 1);
+            
+            // Hide output when switching frames
+            outputContainer.classList.add('hidden'); 
+            
             renderFrameList();
             renderLayerList();
             updateUI();
@@ -455,7 +556,7 @@
                 if (currentFrameIndex >= index) {
                     currentFrameIndex = Math.max(0, currentFrameIndex - 1);
                 }
-                selectFrame(currentFrameIndex); // Re-render and select
+                selectFrame(currentFrameIndex); 
             }
         }
 
@@ -464,14 +565,14 @@
             
             frames.forEach((frame, index) => {
                 const item = document.createElement('div');
-                item.className = `item flex items-center justify-between p-2 rounded-lg cursor-pointer transition duration-100 ${index === currentFrameIndex ? 'active' : ''}`;
+                item.className = `item flex items-center justify-between p-2 cursor-pointer transition duration-100 ${index === currentFrameIndex ? 'active' : ''}`;
                 item.innerHTML = `
                     <div class="flex items-center space-x-2 w-full">
-                        <span class="frame-name flex-1 text-sm font-medium truncate" data-index="${index}">
-                            ${frame.name} (#${index + 1}) ${index === currentFrameIndex ? '(Active)' : ''}
+                        <span class="frame-name flex-1 text-sm font-medium truncate text-stone-100" data-index="${index}">
+                            ${frame.name} (#${index + 1}) ${index === currentFrameIndex ? '<span class="text-accent">(Active)</span>' : ''}
                         </span>
                     </div>
-                    <button class="delete-frame ml-2 p-1 text-sm text-red-500 rounded-md hover:bg-red-100" data-index="${index}" title="Delete Frame" ${frames.length === 1 ? 'disabled' : ''}>
+                    <button class="delete-frame ml-2 p-1 text-sm text-red-500 rounded-md hover:bg-red-900" data-index="${index}" title="Delete Frame" ${frames.length === 1 ? 'disabled' : ''}>
                         ${frames.length === 1 ? '🔒' : '❌'}
                     </button>
                 `;
@@ -490,10 +591,13 @@
             playerTotalFramesSpan.textContent = frames.length;
             playerCurrentFrameSpan.textContent = (isPlaying ? frames.indexOf(currentAnimationFrame) : currentFrameIndex) + 1;
 
+            moveFrameUpBtn.disabled = currentFrameIndex === 0;
+            moveFrameDownBtn.disabled = currentFrameIndex === frames.length - 1;
+
             updateExportBytes();
         }
 
-        // --- Layer Management (Unchanged) ---
+        // --- Layer Management (Unchanged logic) ---
 
         function createNewLayer(name = `Layer ${getActiveLayers().length + 1}`, setActive = true) {
             const layers = getActiveLayers();
@@ -515,32 +619,30 @@
             layerListDiv.innerHTML = '';
             
             if (layers.length === 0) {
-                layerListDiv.innerHTML = '<p class="text-gray-500 text-sm p-2">No layers. Add a new layer.</p>';
+                layerListDiv.innerHTML = '<p class="text-stone-500 text-sm p-2">No layers. Add a new layer.</p>';
                 activeLayerNameSpan.textContent = 'None';
                 return;
             }
             
-            // Render layers in reverse (top layer first)
             layers.slice().reverse().forEach((layer, originalIndex) => {
                 const index = layers.length - 1 - originalIndex;
                 
                 const item = document.createElement('div');
-                item.className = `item flex items-center justify-between p-2 rounded-lg cursor-pointer transition duration-100 ${index === activeLayerIndex ? 'active' : ''}`;
+                item.className = `item flex items-center justify-between p-2 cursor-pointer transition duration-100 ${index === activeLayerIndex ? 'active' : ''}`;
 
-                // ... (Layer item HTML and event listeners are the same, updated to use 'item' class) ...
                 item.innerHTML = `
-                    <div class="flex items-center space-x-2 w-full">
-                        <button class="toggle-visibility p-1 text-sm rounded-md hover:bg-gray-300" data-index="${index}" title="Toggle Visibility">
+                    <div class="flex items-center space-x-2 w-full text-stone-100">
+                        <button class="toggle-visibility p-1 text-sm rounded-md hover:bg-stone-600" data-index="${index}" title="Toggle Visibility">
                             ${layer.visible ? '👁️' : '🚫'}
                         </button>
                         <span class="layer-name flex-1 text-sm font-medium truncate" data-index="${index}">
-                            ${layer.name} ${index === activeLayerIndex ? '(Active)' : ''}
+                            ${layer.name} ${index === activeLayerIndex ? '<span class="text-accent">(Active)</span>' : ''}
                         </span>
-                        <button class="edit-name p-1 text-sm rounded-md hover:bg-gray-300" data-index="${index}" title="Edit Name">
+                        <button class="edit-name p-1 text-sm rounded-md hover:bg-stone-600" data-index="${index}" title="Edit Name">
                             ✏️
                         </button>
                     </div>
-                    <button class="delete-layer ml-2 p-1 text-sm text-red-500 rounded-md hover:bg-red-100" data-index="${index}" title="Delete Layer" ${layers.length === 1 ? 'disabled' : ''}>
+                    <button class="delete-layer ml-2 p-1 text-sm text-red-500 rounded-md hover:bg-red-900" data-index="${index}" title="Delete Layer" ${layers.length === 1 ? 'disabled' : ''}>
                         ${layers.length === 1 ? '🔒' : '❌'}
                     </button>
                 `;
@@ -585,50 +687,36 @@
             renderLayerList();
         }
 
-        // --- Update UI & Export (Unchanged) ---
+        // --- Update UI & Export ---
 
         function updateExportBytes() {
+            // Only update byte counts, do not display code by default
             const frameBytes = generateBitmapBytes(mergeVisibleLayers(getActiveLayers()));
             const singleSize = frameBytes.length;
-            const animationSize = singleSize * frames.length;
+            const animationSize = frames.reduce((sum, frame) => {
+                const bytes = generateBitmapBytes(mergeVisibleLayers(frame.layers));
+                return sum + bytes.length;
+            }, 0);
             
             singleFrameByteCountSpan.textContent = singleSize;
             animationByteCountSpan.textContent = animationSize;
-
-            // Display single frame export by default
-            const singleFrameOutput = formatBytes(frameBytes, getActiveFrame().name);
-            byteOutputDiv.textContent = singleFrameOutput;
         }
 
         function updateUI() {
             if (frames.length === 0) return;
 
-            // Render Editor Canvas
             drawScene(ctx, canvas, pixelSize, getActiveLayers());
             dimsText.textContent = `${iconWidth}x${iconHeight}`;
 
-            // Update Layer/Frame UI elements
             renderFrameList();
             renderLayerList();
             updateExportBytes();
 
-            // Stop animation if player is showing but editor is used
             if (isPlaying) stopAnimation();
         }
 
-        // --- Drawing Handlers (Simplified) ---
-        // SHAPE_TOOLS is no longer defined or used.
-        const SIMPLE_TOOLS = ['pencil', 'eraser']; // Simplified to only include desired tools
+        // --- Drawing Handlers (Unchanged logic) ---
         
-        // This function is now effectively unused since shape/move tools are removed, 
-        // but it's kept as a stub to avoid errors in the drawing lifecycle.
-        function commitPreview(finalX, finalY) { 
-            if (!previewPixels) return;
-            // All complex tools removed, nothing to commit here.
-            previewPixels = null; 
-            layerSnapshot = null;
-        }
-
         function handleStart(e) {
             e.preventDefault();
             if (frames.length === 0 || document.getElementById('editor').classList.contains('hidden')) return;
@@ -640,7 +728,6 @@
             if (currentTool === 'pencil' || currentTool === 'eraser') {
                 setPixel(getActiveLayers()[activeLayerIndex].data, x, y, drawingState); 
             }
-            // Removed: floodFill, move, shape tool logic
 
             updateUI();
         }
@@ -651,30 +738,21 @@
             const { x, y } = getPixelCoords(e);
             
             if (currentTool === 'pencil' || currentTool === 'eraser') {
-                // Use drawLine to ensure continuous drawing, even if the mouse moves fast
                 drawLine(getActiveLayers()[activeLayerIndex].data, startX, startY, x, y, drawingState);
                 startX = x; startY = y;
-                // Since we modify the main data directly, we redraw the whole scene
                 drawScene(ctx, canvas, pixelSize, getActiveLayers());
             }
-            // Removed: shape tool and move tool logic
         }
 
         function handleEnd(e) {
             if (!isDrawing || frames.length === 0) return;
             isDrawing = false;
-            // The drawing is already committed in handleMove for pencil/eraser.
-            
-            // NOTE: The original code had a call to commitPreview here for shape/move tools.
-            // Since those tools are removed, we can simplify this.
-            // const { x, y } = getPixelCoords(e);
-            // commitPreview(x, y); // No longer necessary for pencil/eraser
             
             startX = -1; startY = -1;
             updateUI();
         }
 
-        // --- Export & Import Logic (Unchanged) ---
+        // --- Export & Import Logic (Modified to support download) ---
 
         function mergeVisibleLayers(layers) {
             const composite = createBlankGrid(iconWidth, iconHeight);
@@ -746,7 +824,48 @@
             output += `};`;
             return output;
         }
+
+        function downloadCFile(content, filename) {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
         
+        // NEW: Function to handle code generation and display
+        function generateAndDisplayCode(type) {
+            if (frames.length === 0) return;
+            
+            let outputCode = '';
+            let fileName = '';
+            
+            if (type === 'single') {
+                const frameBytes = generateBitmapBytes(mergeVisibleLayers(getActiveLayers()));
+                outputCode = formatBytes(frameBytes, getActiveFrame().name);
+                fileName = `${getActiveFrame().name.toLowerCase().replace(/\s/g, '_')}_bitmap.c`;
+                generateSingleFrameBtn.textContent = 'Generated!';
+                setTimeout(() => generateSingleFrameBtn.textContent = `Generate Single Frame Array (${frameBytes.length} bytes)`, 2000);
+
+            } else if (type === 'animation') {
+                const allAnimationBytes = frames.map(frame => generateBitmapBytes(mergeVisibleLayers(frame.layers)));
+                outputCode = formatAnimationBytes(allAnimationBytes);
+                fileName = `animation_bitmaps.c`;
+                const totalBytes = allAnimationBytes.length * (allAnimationBytes[0]?.length || 0);
+                generateAnimationBtn.textContent = 'Generated!';
+                setTimeout(() => generateAnimationBtn.textContent = `Generate Animation Array (${totalBytes} bytes)`, 2000);
+            }
+
+            byteOutputDiv.textContent = outputCode;
+            outputContainer.classList.remove('hidden');
+            
+            // Store the generated code and file name for the export button
+            exportCFileBtn.dataset.code = outputCode;
+            exportCFileBtn.dataset.filename = fileName;
+        }
+
         function parseBytes(arrayString) {
             const regex = /0x[0-9a-fA-F]{1,2}|\d+/g;
             const matches = arrayString.match(regex);
@@ -785,7 +904,7 @@
             
             previewBytesSpan.textContent = `Bytes: ${bytes.length} (Expected: ${expectedBytes})`;
 
-            if (bytes.length === 0) { /* ... error handling ... */
+            if (bytes.length === 0) { 
                 previewErrorP.textContent = 'No valid hex/decimal bytes found.';
                 previewErrorP.classList.remove('hidden');
                 commitImportBtn.disabled = true;
@@ -793,7 +912,7 @@
                 parsedGrid = null;
                 return;
             }
-            if (bytes.length !== expectedBytes) { /* ... error handling ... */
+            if (bytes.length !== expectedBytes) { 
                 previewErrorP.textContent = `Byte count mismatch: Found ${bytes.length}, expected ${expectedBytes} for ${w}x${h}.`;
                 previewErrorP.classList.remove('hidden');
                 commitImportBtn.disabled = true;
@@ -809,7 +928,7 @@
                 previewErrorP.classList.add('hidden');
                 commitImportBtn.disabled = false;
                 commitImportBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            } else { /* ... error handling ... */
+            } else { 
                 previewErrorP.textContent = 'Failed to generate grid from array.';
                 previewErrorP.classList.remove('hidden');
                 commitImportBtn.disabled = true;
@@ -822,7 +941,7 @@
             const canvasH = previewCanvas.height;
             const size = Math.min(canvasW / w, canvasH / h);
             previewCtx.clearRect(0, 0, canvasW, canvasH);
-            previewCtx.fillStyle = '#10b981'; 
+            previewCtx.fillStyle = '#000000'; // Black for import preview
             for (let y = 0; y < h; y++) {
                 for (let x = 0; x < w; x++) {
                     if (grid[y][x] === 1) {
@@ -840,9 +959,8 @@
             }
         }
 
-        // --- Animation Player Logic (Unchanged) ---
-        let currentAnimationFrame = null;
-        let animationFrame = 0;
+        // --- Animation Player Logic (Unchanged logic) ---
+        
 
         function animate(timestamp) {
             if (!isPlaying) return;
@@ -857,7 +975,6 @@
                 currentAnimationFrame = frames[animationFrame];
                 playerCurrentFrameSpan.textContent = animationFrame + 1;
                 
-                // Draw the composite of the current animation frame's layers
                 drawScene(playerCtx, playerCanvas, pixelSize, currentAnimationFrame.layers);
             }
 
@@ -866,15 +983,15 @@
 
         function playAnimation() {
             if (frames.length < 2) {
-                // Use a custom modal or message box instead of alert()
-                console.warn('Need at least 2 frames to animate.');
+                // If only one frame, just draw it and don't play
+                drawScene(playerCtx, playerCanvas, pixelSize, getActiveLayers());
                 return; 
             }
             if (isPlaying) return;
 
             isPlaying = true;
-            playStopBtn.innerHTML = '❚❚'; // Pause symbol
-            playStopBtn.classList.replace('bg-red-500', 'bg-yellow-500');
+            playStopBtn.innerHTML = '❚❚'; 
+            playStopBtn.classList.replace('bg-red-600', 'bg-amber-600');
             lastTimestamp = 0;
             animationFrame = currentFrameIndex;
             animationSpeed = parseInt(speedInput.value, 10) || 250;
@@ -886,22 +1003,21 @@
             if (!isPlaying) return;
 
             isPlaying = false;
-            playStopBtn.innerHTML = '▶'; // Play symbol
-            playStopBtn.classList.replace('bg-yellow-500', 'bg-red-500');
+            playStopBtn.innerHTML = '▶'; 
+            playStopBtn.classList.replace('bg-amber-600', 'bg-red-600');
             cancelAnimationFrame(animationFrameId);
             
-            // Set player canvas to display the last viewed frame from the editor
             drawScene(playerCtx, playerCanvas, pixelSize, getActiveLayers());
             playerCurrentFrameSpan.textContent = currentFrameIndex + 1;
         }
 
         function navigateFrame(direction) {
-            stopAnimation(); // Stop animation when manually navigating
+            stopAnimation(); 
             currentFrameIndex = (currentFrameIndex + direction + frames.length) % frames.length;
             selectFrame(currentFrameIndex);
         }
 
-        // --- Initialization and Event Binding (Unchanged) ---
+        // --- Initialization and Event Binding ---
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-page').forEach(page => page.classList.add('hidden'));
@@ -913,7 +1029,6 @@
                 updateUI();
             } else if (tabId === 'player') {
                 stopAnimation();
-                // Initialize player canvas with the currently selected frame
                 drawScene(playerCtx, playerCanvas, pixelSize, getActiveLayers());
                 playerCurrentFrameSpan.textContent = currentFrameIndex + 1;
             }
@@ -924,7 +1039,7 @@
             TOOLS.forEach(tool => {
                 const btn = document.createElement('button');
                 btn.id = `tool-${tool.id}`;
-                btn.className = `tool-btn p-3 rounded-xl transition duration-150 text-xl font-bold border border-gray-300 ${tool.id === currentTool ? 'active' : 'bg-gray-200 hover:bg-gray-300'}`;
+                btn.className = `tool-btn p-3 rounded-md transition duration-150 text-xl font-bold border border-stone-600 ${tool.id === currentTool ? 'active' : ''}`;
                 btn.innerHTML = tool.icon;
                 btn.title = tool.name;
                 btn.addEventListener('click', () => {
@@ -949,16 +1064,22 @@
             playerCanvas.width = MAX_CANVAS_WIDTH;
             playerCanvas.height = MAX_CANVAS_WIDTH * (iconHeight / iconWidth); 
 
-            // Create initial frame and layer if resizing resets everything
             if (frames.length === 0) {
-                addFrame(); // Adds Frame 1 with Base Layer
+                addFrame(false); 
             } else {
-                // Ensure existing frames/layers are resized (cleared)
                 frames.forEach(frame => {
                     frame.layers.forEach(layer => {
-                        layer.data = createBlankGrid(iconWidth, iconHeight);
+                        const oldData = layer.data;
+                        const newGrid = createBlankGrid(iconWidth, iconHeight);
+                        for(let y = 0; y < Math.min(iconHeight, oldData.length); y++) {
+                            for(let x = 0; x < Math.min(iconWidth, oldData[0].length); x++) {
+                                newGrid[y][x] = oldData[y][x];
+                            }
+                        }
+                        layer.data = newGrid;
                     });
                 });
+                selectFrame(currentFrameIndex); 
             }
 
             renderFrameList();
@@ -992,45 +1113,48 @@
         document.getElementById('newLayerBtn').addEventListener('click', () => {
             if (frames.length > 0) createNewLayer();
         });
-        document.getElementById('newFrameBtn').addEventListener('click', () => {
-            addFrame(true); // Duplicate current frame
+
+        // Frame Reordering
+        moveFrameUpBtn.addEventListener('click', () => moveFrame(-1));
+        moveFrameDownBtn.addEventListener('click', () => moveFrame(1));
+
+        // Frame Creation
+        duplicateFrameBtn.addEventListener('click', () => {
+            addFrame(true);
+        });
+        blankFrameBtn.addEventListener('click', () => {
+            addFrame(false);
         });
 
-        // Export Buttons
-        copySingleFrameBtn.addEventListener('click', () => {
-            const frameBytes = generateBitmapBytes(mergeVisibleLayers(getActiveLayers()));
-            const singleFrameOutput = formatBytes(frameBytes, getActiveFrame().name);
-            byteOutputDiv.textContent = singleFrameOutput;
-            // Use document.execCommand('copy') for clipboard (omitted full logic for brevity)
+        // NEW: Generation and Export Bindings
+        generateSingleFrameBtn.addEventListener('click', () => generateAndDisplayCode('single'));
+        generateAnimationBtn.addEventListener('click', () => generateAndDisplayCode('animation'));
+
+        copyOutputBtn.addEventListener('click', () => {
+            const code = byteOutputDiv.textContent;
             const tempTextArea = document.createElement('textarea');
-            tempTextArea.value = singleFrameOutput;
+            tempTextArea.value = code;
             document.body.appendChild(tempTextArea);
             tempTextArea.select();
             document.execCommand('copy');
             document.body.removeChild(tempTextArea);
-            copySingleFrameBtn.textContent = 'Copied!';
-            setTimeout(() => copySingleFrameBtn.textContent = `Copy Single Frame Array (${frameBytes.length} bytes)`, 2000);
+            copyOutputBtn.textContent = 'Code Copied!';
+            setTimeout(() => copyOutputBtn.textContent = 'Copy to Clipboard', 2000);
+        });
+
+        exportCFileBtn.addEventListener('click', (e) => {
+            const code = e.target.dataset.code;
+            const filename = e.target.dataset.filename || 'bitmap_export.c';
+            if (code) {
+                downloadCFile(code, filename);
+                exportCFileBtn.textContent = 'Exported!';
+                setTimeout(() => exportCFileBtn.textContent = 'Export (Download .c file)', 2000);
+            }
         });
         
-        copyAnimationBtn.addEventListener('click', () => {
-            const allAnimationBytes = frames.map(frame => generateBitmapBytes(mergeVisibleLayers(frame.layers)));
-            const animationOutput = formatAnimationBytes(allAnimationBytes);
-            byteOutputDiv.textContent = animationOutput;
-            // Use document.execCommand('copy') for clipboard (omitted full logic for brevity)
-            const tempTextArea = document.createElement('textarea');
-            tempTextArea.value = animationOutput;
-            document.body.appendChild(tempTextArea);
-            tempTextArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempTextArea);
-            copyAnimationBtn.textContent = 'Copied!';
-            const totalBytes = allAnimationBytes.length * (allAnimationBytes[0]?.length || 0);
-            setTimeout(() => copyAnimationBtn.textContent = `Copy Animation Array (${totalBytes} bytes)`, 2000);
-        });
-
         // Modal Bindings
         mainImportBtn.addEventListener('click', showImportModal);
-        cancelImportBtn.addEventListener('click', () => { hideImportModal(); updateUI(); }); // Ensure UI updates on cancel
+        cancelImportBtn.addEventListener('click', () => { hideImportModal(); updateUI(); }); 
         previewArrayBtn.addEventListener('click', handlePreview);
         commitImportBtn.addEventListener('click', handleImport);
 
@@ -1042,7 +1166,7 @@
             animationSpeed = parseInt(e.target.value, 10);
             if (isPlaying) {
                 stopAnimation();
-                playAnimation(); // Restart with new speed
+                playAnimation(); 
             }
         });
 
@@ -1052,7 +1176,7 @@
         });
 
         function showImportModal() {
-            if (frames.length === 0) { addFrame(); }
+            if (frames.length === 0) { addFrame(false); }
             importModal.classList.remove('hidden');
             previewErrorP.classList.add('hidden');
             commitImportBtn.disabled = true;
@@ -1073,8 +1197,9 @@
         window.onload = function() {
             initTools();
             initEditor(parseInt(inputWidth.value, 10), parseInt(inputHeight.value, 10)); 
-            switchTab('editor'); // Start on the editor tab
+            switchTab('editor'); 
         };
     </script>
 </body>
 </html>
+
