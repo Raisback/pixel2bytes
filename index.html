@@ -6,20 +6,20 @@
     <title>Pixel Animation Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Base styles & Dark Yellowish Theme */
+        
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #1c1917; /* Stone 900 - Dark Base */
-            color: #f5f5f4; /* Stone 100 - Primary Text */
+            background-color: #1c1917; 
+            color: #f5f5f4; 
         }
         .editor-container { max-width: 1400px; }
-        .bg-panel { background-color: #292524; /* Stone 800 - Panel Background */ }
-        .text-accent { color: #f59e0b; /* Amber 500 - Accent Color */ }
+        .bg-panel { background-color: #292524; }
+        .text-accent { color: #f59e0b;  }
 
         /* Canvas styles - Monochrome Display */
         #gridCanvas, #playerCanvas {
-            border: 2px solid #a1a1aa; /* Stone 400 */
-            background-color: #e5e5e5; /* Very light grey/off-white (Monochrome screen) */
+            border: 2px solid #a1a1aa;
+            background-color: #e5e5e5; 
             touch-action: none;
             image-rendering: crisp-edges;
             image-rendering: pixelated;
@@ -251,7 +251,7 @@
         </div> <!-- End Tab Content -->
     </div>
 
-    <!-- Import Modal (updated for theme) -->
+    <!-- Import Modal -->
     <div id="importModal" class="modal-overlay hidden">
         <div class="bg-panel p-6 rounded-xl shadow-2xl w-full max-w-lg">
             <h2 class="text-2xl font-bold mb-4 text-stone-100">Import C Array Data</h2>
