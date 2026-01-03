@@ -3,31 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pixel Animation Studio</title>
+    <title>Pixel Animation Studio v2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        
+        /* Base styles & Dark Yellowish Theme */
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #1c1917; 
-            color: #f5f5f4; 
+            background-color: #1c1917; /* Stone 900 - Dark Base */
+            color: #f5f5f4; /* Stone 100 - Primary Text */
+            overscroll-behavior: none;
         }
         .editor-container { max-width: 1400px; }
-        .bg-panel { background-color: #292524; }
-        .text-accent { color: #f59e0b;  }
+        .bg-panel { background-color: #292524; /* Stone 800 - Panel Background */ }
+        .text-accent { color: #f59e0b; /* Amber 500 - Accent Color */ }
 
         /* Canvas styles - Monochrome Display */
         #gridCanvas, #playerCanvas {
-            border: 2px solid #a1a1aa;
-            background-color: #e5e5e5; 
+            border: 2px solid #a1a1aa; /* Stone 400 */
+            background-color: #e5e5e5; /* Very light grey/off-white (Monochrome screen) */
             touch-action: none;
             image-rendering: crisp-edges;
             image-rendering: pixelated;
             width: 100%;
             height: auto;
+            cursor: crosshair;
         }
 
-        /* Tab styles (Solid buttons, less rounded) */
+        /* Tab styles */
         .tab-btn {
             @apply px-5 py-2 font-bold text-stone-400 border-b-4 border-transparent transition-colors bg-stone-900/50 hover:text-amber-500 hover:border-amber-500 rounded-none;
         }
@@ -37,7 +39,7 @@
 
         /* Tool active state - Boxy and defined */
         .tool-btn {
-            @apply bg-stone-700 text-stone-200 hover:bg-stone-600 transition-colors border-2 border-stone-600 rounded-md;
+            @apply bg-stone-700 text-stone-200 hover:bg-stone-600 transition-colors border-2 border-stone-600 rounded-md flex justify-center items-center text-xl;
         }
         .tool-btn.active {
             box-shadow: 0 0 0 3px #f59e0b; /* Amber shadow */
@@ -56,7 +58,7 @@
             background-color: #292524; 
         }
 
-        /* Utility buttons - Solid box style */
+        /* Utility buttons */
         .action-btn {
             @apply px-4 py-2 font-semibold rounded-md shadow-lg transition-colors text-sm border-2 border-transparent;
         }
@@ -82,7 +84,7 @@
 <body class="bg-theme-main min-h-screen p-4 md:p-8 flex justify-center">
 
     <div class="editor-container w-full">
-        <h1 class="text-3xl font-extrabold text-stone-100 mb-4">Pixel Animation Studio</h1>
+        <h1 class="text-3xl font-extrabold text-stone-100 mb-4">Pixel Animation Studio <span class="text-amber-500 text-lg align-top">v2.0</span></h1>
 
         <!-- Tabs -->
         <div class="flex border-b border-stone-700 mb-6">
@@ -106,6 +108,10 @@
                             <div id="toolPanel" class="grid grid-cols-4 gap-2">
                                 <!-- Tools injected here -->
                             </div>
+                            <p class="text-xs text-stone-500 mt-2">
+                                * Move tool shifts active layer<br>
+                                * Shapes draw on release
+                            </p>
                         </div>
 
                         <!-- Config -->
@@ -131,7 +137,7 @@
                         <h2 class="text-xl font-semibold text-stone-100 mb-4">
                             Frame <span id="currentFrameNum" class="text-accent">1</span> (<span id="dimsText">16x16</span>)
                         </h2>
-                        <div class="max-w-full overflow-hidden">
+                        <div class="max-w-full overflow-hidden relative">
                             <canvas id="gridCanvas" width="512" height="512"></canvas>
                         </div>
                         
@@ -154,12 +160,8 @@
                             <div class="flex justify-between items-center mb-2">
                                 <p class="text-sm font-medium text-stone-300">Sequence List</p>
                                 <div id="frameNav" class="flex space-x-2">
-                                    <button id="moveFrameUpBtn" class="p-1 text-lg text-amber-500 hover:text-amber-300 disabled:opacity-50" title="Move Frame Up (Earlier)">
-                                        ▲
-                                    </button>
-                                    <button id="moveFrameDownBtn" class="p-1 text-lg text-amber-500 hover:text-amber-300 disabled:opacity-50" title="Move Frame Down (Later)">
-                                        ▼
-                                    </button>
+                                    <button id="moveFrameUpBtn" class="p-1 text-lg text-amber-500 hover:text-amber-300 disabled:opacity-50" title="Move Frame Up (Earlier)">▲</button>
+                                    <button id="moveFrameDownBtn" class="p-1 text-lg text-amber-500 hover:text-amber-300 disabled:opacity-50" title="Move Frame Down (Later)">▼</button>
                                 </div>
                             </div>
                             <div id="frameList" class="space-y-1 max-h-32 overflow-y-auto mb-4 border border-stone-700 p-2 rounded-lg">
@@ -167,10 +169,10 @@
                             </div>
                             <div class="flex space-x-2">
                                 <button id="duplicateFrameBtn" class="action-btn flex-1 bg-green-600 text-white hover:bg-green-500 border-green-700">
-                                    Duplicate Frame
+                                    Duplicate
                                 </button>
                                 <button id="blankFrameBtn" class="action-btn flex-1 bg-amber-600 text-stone-900 hover:bg-amber-500 border-amber-700">
-                                    + Blank Frame
+                                    + Blank
                                 </button>
                             </div>
                         </div>
@@ -204,9 +206,7 @@
 
                             <!-- Output Area -->
                             <div id="outputContainer" class="hidden">
-                                <div id="byteOutput" class="pixel-output text-amber-300 text-xs h-32 overflow-y-auto p-2 bg-black rounded-md border border-stone-700 mb-3">
-                                    Generated code will appear here.
-                                </div>
+                                <div id="byteOutput" class="pixel-output text-amber-300 text-xs h-32 overflow-y-auto p-2 bg-black rounded-md border border-stone-700 mb-3">Generated code will appear here.</div>
                                 
                                 <div class="flex justify-end space-x-3">
                                     <button id="copyOutputBtn" class="export-control-btn bg-stone-700 text-stone-100 hover:bg-stone-600">
@@ -232,15 +232,9 @@
                         <label for="speedInput" class="text-sm font-medium text-stone-300">Speed (ms/Frame):</label>
                         <input type="number" id="speedInput" value="250" min="50" max="1000" step="50" class="w-20 p-2 border rounded-md text-center bg-stone-700 text-stone-100 border-stone-600">
 
-                        <button id="prevFrameBtn" class="p-3 bg-stone-700 text-stone-100 hover:bg-stone-600 rounded-md transition-colors text-xl font-bold border border-stone-600" title="Previous Frame">
-                            ◀
-                        </button>
-                        <button id="playStopBtn" class="p-4 bg-red-600 text-white hover:bg-red-500 rounded-md transition-colors text-2xl font-bold shadow-lg border border-red-700" title="Play/Stop">
-                            ▶
-                        </button>
-                        <button id="nextFrameBtn" class="p-3 bg-stone-700 text-stone-100 hover:bg-stone-600 rounded-md transition-colors text-xl font-bold border border-stone-600" title="Next Frame">
-                            ▶
-                        </button>
+                        <button id="prevFrameBtn" class="p-3 bg-stone-700 text-stone-100 hover:bg-stone-600 rounded-md transition-colors text-xl font-bold border border-stone-600" title="Previous Frame">◀</button>
+                        <button id="playStopBtn" class="p-4 bg-red-600 text-white hover:bg-red-500 rounded-md transition-colors text-2xl font-bold shadow-lg border border-red-700" title="Play/Stop">▶</button>
+                        <button id="nextFrameBtn" class="p-3 bg-stone-700 text-stone-100 hover:bg-stone-600 rounded-md transition-colors text-xl font-bold border border-stone-600" title="Next Frame">▶</button>
                     </div>
                     <p class="mt-4 text-lg font-medium text-stone-100">
                         Current Frame: <span id="playerCurrentFrame" class="text-accent">1</span> / <span id="playerTotalFrames" class="text-accent">1</span>
@@ -252,16 +246,14 @@
     </div>
 
     <!-- Import Modal -->
-    <div id="importModal" class="modal-overlay hidden">
-        <div class="bg-panel p-6 rounded-xl shadow-2xl w-full max-w-lg">
+    <div id="importModal" class="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-50 hidden">
+        <div class="bg-panel p-6 rounded-xl shadow-2xl w-full max-w-lg border border-stone-600">
             <h2 class="text-2xl font-bold mb-4 text-stone-100">Import C Array Data</h2>
             
             <textarea id="arrayInput" class="w-full h-32 p-3 border border-stone-600 bg-stone-700 text-stone-100 rounded-md font-mono text-sm resize-none focus:ring-amber-500 focus:border-amber-500" placeholder="Paste your const uint8_t array here..."></textarea>
             
             <div class="flex items-center justify-between mt-3 mb-4">
-                <button id="previewArrayBtn" class="action-btn bg-amber-600 text-stone-900 hover:bg-amber-500 border-amber-700">
-                    Preview Array
-                </button>
+                <button id="previewArrayBtn" class="action-btn bg-amber-600 text-stone-900 hover:bg-amber-500 border-amber-700">Preview Array</button>
                 <div class="text-sm text-stone-300">
                     <span id="previewDims">W: ? H: ?</span> | <span id="previewBytes">Bytes: ?</span>
                 </div>
@@ -274,12 +266,8 @@
             </div>
 
             <div class="flex justify-end space-x-3">
-                <button id="cancelImportBtn" class="action-btn bg-stone-600 text-stone-100 hover:bg-stone-500 border-stone-700">
-                    Cancel
-                </button>
-                <button id="commitImportBtn" disabled class="action-btn bg-green-600 text-white opacity-50 cursor-not-allowed border-green-700">
-                    Import to Active Layer
-                </button>
+                <button id="cancelImportBtn" class="action-btn bg-stone-600 text-stone-100 hover:bg-stone-500 border-stone-700">Cancel</button>
+                <button id="commitImportBtn" disabled class="action-btn bg-green-600 text-white opacity-50 cursor-not-allowed border-green-700">Import to Active Layer</button>
             </div>
         </div>
     </div>
@@ -297,25 +285,33 @@
         let currentTool = 'pencil';
         
         let isDrawing = false; 
-        let drawingState = 1; // 1 for drawing, 0 for erasing (for black pixel mode: 1 means pixel is ON)
+        let drawingState = 1; // 1 for drawing, 0 for erasing
         
         let startX = -1, startY = -1; 
-        let previewPixels = null; 
-        let layerSnapshot = null; 
+        let previewPixels = null; // Temporary grid for shape previews
+        let layerSnapshot = null; // Snapshot for move operations
         let parsedGrid = null;
 
         let isPlaying = false;
-        let animationSpeed = 250; // ms per frame
+        let animationSpeed = 250; 
         let lastTimestamp = 0;
         let animationFrameId = null; 
         let currentAnimationFrame = null;
         let animationFrame = 0;
 
-        // Tool definitions
+        // Tool definitions - Expanded Set
         const TOOLS = [
-            { id: 'pencil', name: 'Pencil (Black)', icon: '✏️', cursor: 'crosshair' },
-            { id: 'eraser', name: 'Eraser (White)', icon: '🧼', cursor: 'cell' },
+            { id: 'pencil', name: 'Pencil', icon: '✏️', cursor: 'crosshair' },
+            { id: 'eraser', name: 'Eraser', icon: '🧼', cursor: 'cell' },
+            { id: 'line', name: 'Line', icon: '📏', cursor: 'crosshair' },
+            { id: 'rectangle', name: 'Rectangle', icon: '⬜', cursor: 'crosshair' },
+            { id: 'circle', name: 'Circle', icon: '⭕', cursor: 'crosshair' },
+            { id: 'move', name: 'Move', icon: '✥', cursor: 'move' },
+            { id: 'fill', name: 'Fill Bucket', icon: '🪣', cursor: 'cell' },
         ];
+        
+        const SHAPE_TOOLS = ['line', 'rectangle', 'circle'];
+        const SIMPLE_TOOLS = ['pencil', 'eraser', 'fill'];
 
         // --- DOM Elements ---
         const canvas = document.getElementById('gridCanvas');
@@ -343,14 +339,12 @@
         const playerCurrentFrameSpan = document.getElementById('playerCurrentFrame');
         const playerTotalFramesSpan = document.getElementById('playerTotalFrames');
 
-        // Generation and Export Elements (NEW/RENAMED)
+        // Export/Import
         const generateSingleFrameBtn = document.getElementById('generateSingleFrameBtn');
         const generateAnimationBtn = document.getElementById('generateAnimationBtn');
         const outputContainer = document.getElementById('outputContainer');
         const copyOutputBtn = document.getElementById('copyOutputBtn');
         const exportCFileBtn = document.getElementById('exportCFileBtn');
-        
-        // Modal Elements (omitted for brevity, assume linked)
         const importModal = document.getElementById('importModal');
         const arrayInput = document.getElementById('arrayInput');
         const previewCanvas = document.getElementById('previewCanvas');
@@ -369,9 +363,7 @@
         const moveFrameUpBtn = document.getElementById('moveFrameUpBtn');
         const moveFrameDownBtn = document.getElementById('moveFrameDownBtn');
 
-
         // --- Core State Accessors ---
-
         function getActiveLayers() {
             return frames[currentFrameIndex].layers;
         }
@@ -380,19 +372,23 @@
         }
 
         // --- Utility Functions ---
-
         function createBlankGrid(w, h) {
             return Array.from({ length: h }, () => Array(w).fill(0));
         }
 
         function getPixelCoords(e) { 
-            const targetCanvas = e.currentTarget;
-            const rect = targetCanvas.getBoundingClientRect();
+            // Fix: Always use the gridCanvas for coordinate calculation relative to the drawing area
+            // even if the event target is the document (mouse up outside canvas)
+            const rect = canvas.getBoundingClientRect(); 
             let clientX, clientY;
             
             if (e.touches && e.touches.length > 0) {
                 clientX = e.touches[0].clientX;
                 clientY = e.touches[0].clientY;
+            } else if (e.changedTouches && e.changedTouches.length > 0) {
+                // Handle touchend which has changedTouches but not touches
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
             } else {
                 clientX = e.clientX;
                 clientY = e.clientY;
@@ -409,6 +405,7 @@
             }
         }
         
+        // --- Drawing Algorithms ---
         function drawLine(grid, x0, y0, x1, y1, value) {
             const dx = Math.abs(x1 - x0);
             const dy = Math.abs(y1 - y0);
@@ -424,21 +421,73 @@
             }
         }
 
-        // --- Canvas Drawing and Rendering (Monochrome update) ---
+        function drawRectangle(grid, x0, y0, x1, y1, value) {
+            const minX = Math.min(x0, x1);
+            const maxX = Math.max(x0, x1);
+            const minY = Math.min(y0, y1);
+            const maxY = Math.max(y0, y1);
+            for (let y = minY; y <= maxY; y++) {
+                for (let x = minX; x <= maxX; x++) {
+                    setPixel(grid, x, y, value);
+                }
+            }
+        }
 
+        function drawCircle(grid, x0, y0, x1, y1, value) {
+            const dx = x1 - x0;
+            const dy = y1 - y0;
+            const radius = Math.round(Math.sqrt(dx * dx + dy * dy));
+            let x = radius;
+            let y = 0;
+            let err = 0;
+            while (x >= y) {
+                for (let i = x0 - x; i <= x0 + x; i++) { setPixel(grid, i, y0 + y, value); setPixel(grid, i, y0 - y, value); }
+                for (let i = x0 - y; i <= x0 + y; i++) { setPixel(grid, i, y0 + x, value); setPixel(grid, i, y0 - x, value); }
+                if (err <= 0) { y += 1; err += 2 * y + 1; }
+                if (err > 0) { x -= 1; err -= 2 * x + 1; }
+            }
+        }
+
+        function floodFill(x, y) {
+            const targetGrid = getActiveLayers()[activeLayerIndex].data;
+            const targetValue = targetGrid[y][x];
+            const newValue = drawingState; 
+            if (targetValue === newValue) return;
+            const queue = [[x, y]];
+            while(queue.length > 0) {
+                const [cx, cy] = queue.shift();
+                if (cx >= 0 && cx < iconWidth && cy >= 0 && cy < iconHeight && targetGrid[cy][cx] === targetValue) {
+                    targetGrid[cy][cx] = newValue;
+                    queue.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+                }
+            }
+        }
+
+        function shiftGrid(sourceGrid, offsetX, offsetY) {
+            const targetGrid = createBlankGrid(iconWidth, iconHeight);
+            for (let y = 0; y < iconHeight; y++) {
+                for (let x = 0; x < iconWidth; x++) {
+                    const newX = x + offsetX;
+                    const newY = y + offsetY;
+                    if (newX >= 0 && newX < iconWidth && newY >= 0 && newY < iconHeight) {
+                        targetGrid[newY][newX] = sourceGrid[y][x];
+                    }
+                }
+            }
+            return targetGrid;
+        }
+
+        // --- Canvas Rendering ---
         function drawScene(targetCtx, targetCanvas, targetPixelSize, layersToRender) {
-            // Background is handled by CSS: #e5e5e5
             targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
-            targetCtx.strokeStyle = '#bdbdbd'; // Slightly darker grid lines on light background
+            targetCtx.strokeStyle = '#bdbdbd'; 
 
-            // --- 1. Onion Skinning (Previous Frame) ---
+            // 1. Onion Skinning (Previous Frame) - Only on Editor
             if (targetCanvas.id === 'gridCanvas' && frames.length > 1 && currentFrameIndex > 0) {
                 const prevFrameIndex = (currentFrameIndex - 1);
                 const prevFrameLayers = frames[prevFrameIndex].layers;
                 const prevComposite = mergeVisibleLayers(prevFrameLayers);
-                
-                targetCtx.fillStyle = 'rgba(0, 0, 0, 0.1)'; // Very light transparent black for ghosting
-                
+                targetCtx.fillStyle = 'rgba(0, 0, 0, 0.1)'; 
                 for (let y = 0; y < iconHeight; y++) {
                     for (let x = 0; x < iconWidth; x++) {
                         if (prevComposite[y][x]) {
@@ -448,39 +497,35 @@
                 }
             }
             
-            // --- 2. Current Frame Layers ---
+            // 2. Current Frame Layers
             for (let k = 0; k < layersToRender.length; k++) {
                 const layer = layersToRender[k];
                 if (!layer.visible) continue;
-
-                // Use BLACK for the main pixel color
                 targetCtx.fillStyle = '#000000'; 
-
                 for (let y = 0; y < iconHeight; y++) {
                     for (let x = 0; x < iconWidth; x++) {
-                        const is_set = layer.data[y][x];
-                        
-                        if (is_set) {
+                        if (layer.data[y][x]) {
                             targetCtx.fillRect(x * targetPixelSize, y * targetPixelSize, targetPixelSize, targetPixelSize);
                         }
                     }
                 }
             }
 
-            // Only draw preview and grid on the main editor canvas
+            // 3. Editor Overlays (Preview & Grid)
             if (targetCanvas.id === 'gridCanvas') {
+                // Preview Pixels (Shapes/Move)
                 if (previewPixels) {
+                    targetCtx.fillStyle = '#f59e0b'; // Amber for preview
                     for (let y = 0; y < iconHeight; y++) {
                         for (let x = 0; x < iconWidth; x++) {
                             if (previewPixels[y][x]) {
-                                targetCtx.fillStyle = '#cc0000'; // Dark red for preview
                                 targetCtx.fillRect(x * targetPixelSize, y * targetPixelSize, targetPixelSize, targetPixelSize);
                             }
                         }
                     }
                 }
                 
-                // Draw Grid
+                // Grid Lines
                 targetCtx.strokeStyle = '#bdbdbd'; 
                 for (let y = 0; y <= iconHeight; y++) {
                     targetCtx.beginPath();
@@ -497,12 +542,104 @@
             }
         }
 
-        // --- Frame Management (Unchanged logic) ---
+        // --- Interaction Handlers ---
+        
+        function commitPreview(finalX, finalY) {
+            if (!previewPixels && currentTool !== 'move') return;
+
+            const activeLayer = getActiveLayers()[activeLayerIndex];
+            const targetGrid = activeLayer.data;
+            
+            if (SHAPE_TOOLS.includes(currentTool)) {
+                // Apply shape to actual layer
+                // We use drawingState (1 usually, could be 0)
+                const value = 1; 
+                if (currentTool === 'line') drawLine(targetGrid, startX, startY, finalX, finalY, value);
+                else if (currentTool === 'rectangle') drawRectangle(targetGrid, startX, startY, finalX, finalY, value);
+                else if (currentTool === 'circle') drawCircle(targetGrid, startX, startY, finalX, finalY, value);
+            } else if (currentTool === 'move') {
+                const offsetX = finalX - startX;
+                const offsetY = finalY - startY;
+                activeLayer.data = shiftGrid(layerSnapshot, offsetX, offsetY);
+                layerSnapshot = null;
+            }
+
+            previewPixels = null; 
+        }
+
+        function handleStart(e) {
+            e.preventDefault();
+            if (frames.length === 0 || document.getElementById('editor').classList.contains('hidden')) return;
+            isDrawing = true;
+            const { x, y } = getPixelCoords(e);
+            startX = x; startY = y;
+            drawingState = (currentTool === 'eraser' ? 0 : 1); 
+            
+            const activeLayer = getActiveLayers()[activeLayerIndex];
+
+            if (SIMPLE_TOOLS.includes(currentTool)) {
+                if (currentTool === 'fill') {
+                    floodFill(x, y);
+                    isDrawing = false; 
+                } else {
+                    setPixel(activeLayer.data, x, y, drawingState); 
+                }
+            } else if (currentTool === 'move') {
+                layerSnapshot = JSON.parse(JSON.stringify(activeLayer.data));
+                activeLayer.data = createBlankGrid(iconWidth, iconHeight);
+            } else if (SHAPE_TOOLS.includes(currentTool)) {
+                previewPixels = createBlankGrid(iconWidth, iconHeight);
+            }
+
+            updateUI();
+        }
+
+        function handleMove(e) {
+            e.preventDefault();
+            if (!isDrawing || frames.length === 0) return;
+            const { x, y } = getPixelCoords(e);
+            const activeLayer = getActiveLayers()[activeLayerIndex];
+
+            if (currentTool === 'pencil' || currentTool === 'eraser') {
+                drawLine(activeLayer.data, startX, startY, x, y, drawingState);
+                startX = x; startY = y;
+            } else if (SHAPE_TOOLS.includes(currentTool)) {
+                previewPixels = createBlankGrid(iconWidth, iconHeight);
+                drawPreviewShape(previewPixels, x, y);
+            } else if (currentTool === 'move') {
+                const offsetX = x - startX;
+                const offsetY = y - startY;
+                previewPixels = shiftGrid(layerSnapshot, offsetX, offsetY);
+            }
+            updateUI();
+        }
+
+        function handleEnd(e) {
+            if (!isDrawing || frames.length === 0) return;
+            isDrawing = false;
+            const { x, y } = getPixelCoords(e);
+
+            if (SHAPE_TOOLS.includes(currentTool) || currentTool === 'move') {
+                commitPreview(x, y);
+            }
+            
+            startX = -1; startY = -1;
+            updateUI();
+        }
+
+        function drawPreviewShape(grid, targetX, targetY) {
+            const value = 1;
+            if (currentTool === 'line') drawLine(grid, startX, startY, targetX, targetY, value);
+            else if (currentTool === 'rectangle') drawRectangle(grid, startX, startY, targetX, targetY, value);
+            else if (currentTool === 'circle') drawCircle(grid, startX, startY, targetX, targetY, value);
+        }
+
+        // --- Core Application Logic (Frames/Layers/Export) ---
+        // (Mostly identical to original, ensuring references are correct)
 
         function moveFrame(direction) {
             const oldIndex = currentFrameIndex;
             const newIndex = oldIndex + direction;
-
             if (newIndex >= 0 && newIndex < frames.length) {
                 const frameToMove = frames.splice(oldIndex, 1)[0];
                 frames.splice(newIndex, 0, frameToMove);
@@ -513,7 +650,6 @@
         function addFrame(isDuplicate = false) {
             const newFrameIndex = frames.length;
             let newLayers = [];
-
             if (isDuplicate && frames.length > 0) {
                 const activeLayers = getActiveLayers();
                 newLayers = activeLayers.map(layer => ({
@@ -528,12 +664,7 @@
                     visible: true,
                 }];
             }
-
-            frames.push({
-                name: `Frame ${newFrameIndex + 1}`,
-                layers: newLayers,
-            });
-            
+            frames.push({ name: `Frame ${newFrameIndex + 1}`, layers: newLayers });
             selectFrame(newFrameIndex);
         }
 
@@ -541,10 +672,7 @@
             if (index < 0 || index >= frames.length) return;
             currentFrameIndex = index;
             activeLayerIndex = Math.min(activeLayerIndex, getActiveLayers().length - 1);
-            
-            // Hide output when switching frames
             outputContainer.classList.add('hidden'); 
-            
             renderFrameList();
             renderLayerList();
             updateUI();
@@ -553,63 +681,39 @@
         function removeFrame(index) {
             if (frames.length > 1) {
                 frames.splice(index, 1);
-                if (currentFrameIndex >= index) {
-                    currentFrameIndex = Math.max(0, currentFrameIndex - 1);
-                }
+                if (currentFrameIndex >= index) currentFrameIndex = Math.max(0, currentFrameIndex - 1);
                 selectFrame(currentFrameIndex); 
             }
         }
 
         function renderFrameList() {
             frameListDiv.innerHTML = '';
-            
             frames.forEach((frame, index) => {
                 const item = document.createElement('div');
                 item.className = `item flex items-center justify-between p-2 cursor-pointer transition duration-100 ${index === currentFrameIndex ? 'active' : ''}`;
                 item.innerHTML = `
                     <div class="flex items-center space-x-2 w-full">
-                        <span class="frame-name flex-1 text-sm font-medium truncate text-stone-100" data-index="${index}">
-                            ${frame.name} (#${index + 1}) ${index === currentFrameIndex ? '<span class="text-accent">(Active)</span>' : ''}
-                        </span>
+                        <span class="frame-name flex-1 text-sm font-medium truncate text-stone-100">${frame.name} (#${index + 1}) ${index === currentFrameIndex ? '<span class="text-accent">(Active)</span>' : ''}</span>
                     </div>
-                    <button class="delete-frame ml-2 p-1 text-sm text-red-500 rounded-md hover:bg-red-900" data-index="${index}" title="Delete Frame" ${frames.length === 1 ? 'disabled' : ''}>
-                        ${frames.length === 1 ? '🔒' : '❌'}
-                    </button>
+                    <button class="delete-frame ml-2 p-1 text-sm text-red-500 rounded-md hover:bg-red-900" data-index="${index}" title="Delete Frame" ${frames.length === 1 ? 'disabled' : ''}>${frames.length === 1 ? '🔒' : '❌'}</button>
                 `;
-
                 item.addEventListener('click', () => selectFrame(index));
-                item.querySelector('.delete-frame').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    removeFrame(index);
-                });
-                
+                item.querySelector('.delete-frame').addEventListener('click', (e) => { e.stopPropagation(); removeFrame(index); });
                 frameListDiv.appendChild(item);
             });
-            
             currentFrameNumSpan.textContent = currentFrameIndex + 1;
             totalFramesCountSpan.textContent = frames.length;
             playerTotalFramesSpan.textContent = frames.length;
             playerCurrentFrameSpan.textContent = (isPlaying ? frames.indexOf(currentAnimationFrame) : currentFrameIndex) + 1;
-
             moveFrameUpBtn.disabled = currentFrameIndex === 0;
             moveFrameDownBtn.disabled = currentFrameIndex === frames.length - 1;
-
             updateExportBytes();
         }
 
-        // --- Layer Management (Unchanged logic) ---
-
         function createNewLayer(name = `Layer ${getActiveLayers().length + 1}`, setActive = true) {
             const layers = getActiveLayers();
-            const newLayer = {
-                name: name,
-                data: createBlankGrid(iconWidth, iconHeight),
-                visible: true,
-            };
-            layers.push(newLayer);
-            if (setActive) {
-                activeLayerIndex = layers.length - 1;
-            }
+            layers.push({ name: name, data: createBlankGrid(iconWidth, iconHeight), visible: true });
+            if (setActive) activeLayerIndex = layers.length - 1;
             renderLayerList();
             updateUI();
         }
@@ -617,69 +721,30 @@
         function renderLayerList() {
             const layers = getActiveLayers();
             layerListDiv.innerHTML = '';
-            
             if (layers.length === 0) {
                 layerListDiv.innerHTML = '<p class="text-stone-500 text-sm p-2">No layers. Add a new layer.</p>';
                 activeLayerNameSpan.textContent = 'None';
                 return;
             }
-            
             layers.slice().reverse().forEach((layer, originalIndex) => {
                 const index = layers.length - 1 - originalIndex;
-                
                 const item = document.createElement('div');
                 item.className = `item flex items-center justify-between p-2 cursor-pointer transition duration-100 ${index === activeLayerIndex ? 'active' : ''}`;
-
                 item.innerHTML = `
                     <div class="flex items-center space-x-2 w-full text-stone-100">
-                        <button class="toggle-visibility p-1 text-sm rounded-md hover:bg-stone-600" data-index="${index}" title="Toggle Visibility">
-                            ${layer.visible ? '👁️' : '🚫'}
-                        </button>
-                        <span class="layer-name flex-1 text-sm font-medium truncate" data-index="${index}">
-                            ${layer.name} ${index === activeLayerIndex ? '<span class="text-accent">(Active)</span>' : ''}
-                        </span>
-                        <button class="edit-name p-1 text-sm rounded-md hover:bg-stone-600" data-index="${index}" title="Edit Name">
-                            ✏️
-                        </button>
+                        <button class="toggle-visibility p-1 text-sm rounded-md hover:bg-stone-600" title="Toggle Visibility">${layer.visible ? '👁️' : '🚫'}</button>
+                        <span class="layer-name flex-1 text-sm font-medium truncate">${layer.name} ${index === activeLayerIndex ? '<span class="text-accent">(Active)</span>' : ''}</span>
+                        <button class="edit-name p-1 text-sm rounded-md hover:bg-stone-600" title="Edit Name">✏️</button>
                     </div>
-                    <button class="delete-layer ml-2 p-1 text-sm text-red-500 rounded-md hover:bg-red-900" data-index="${index}" title="Delete Layer" ${layers.length === 1 ? 'disabled' : ''}>
-                        ${layers.length === 1 ? '🔒' : '❌'}
-                    </button>
+                    <button class="delete-layer ml-2 p-1 text-sm text-red-500 rounded-md hover:bg-red-900" title="Delete Layer" ${layers.length === 1 ? 'disabled' : ''}>${layers.length === 1 ? '🔒' : '❌'}</button>
                 `;
-
                 item.addEventListener('click', () => setActiveLayer(index));
-                item.querySelector('.toggle-visibility').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    layers[index].visible = !layers[index].visible;
-                    renderLayerList();
-                    updateUI();
-                });
-                item.querySelector('.delete-layer').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (layers.length > 1) {
-                        layers.splice(index, 1);
-                        if (activeLayerIndex >= index && activeLayerIndex > 0) {
-                            activeLayerIndex--;
-                        }
-                        renderLayerList();
-                        updateUI();
-                    }
-                });
-                item.querySelector('.edit-name').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const newName = prompt(`Enter new name for Layer ${index + 1}:`, layer.name);
-                    if (newName && newName.trim() !== '') {
-                        layers[index].name = newName.trim();
-                        renderLayerList();
-                    }
-                });
-                
+                item.querySelector('.toggle-visibility').addEventListener('click', (e) => { e.stopPropagation(); layers[index].visible = !layers[index].visible; renderLayerList(); updateUI(); });
+                item.querySelector('.delete-layer').addEventListener('click', (e) => { e.stopPropagation(); if (layers.length > 1) { layers.splice(index, 1); if (activeLayerIndex >= index && activeLayerIndex > 0) activeLayerIndex--; renderLayerList(); updateUI(); }});
+                item.querySelector('.edit-name').addEventListener('click', (e) => { e.stopPropagation(); const newName = prompt(`Enter new name for Layer ${index + 1}:`, layer.name); if (newName && newName.trim() !== '') { layers[index].name = newName.trim(); renderLayerList(); }});
                 layerListDiv.appendChild(item);
             });
-            
-            if (layers.length > 0) {
-                activeLayerNameSpan.textContent = layers[activeLayerIndex].name;
-            }
+            if (layers.length > 0) activeLayerNameSpan.textContent = layers[activeLayerIndex].name;
         }
         
         function setActiveLayer(index) {
@@ -687,72 +752,23 @@
             renderLayerList();
         }
 
-        // --- Update UI & Export ---
-
         function updateExportBytes() {
-            // Only update byte counts, do not display code by default
             const frameBytes = generateBitmapBytes(mergeVisibleLayers(getActiveLayers()));
             const singleSize = frameBytes.length;
-            const animationSize = frames.reduce((sum, frame) => {
-                const bytes = generateBitmapBytes(mergeVisibleLayers(frame.layers));
-                return sum + bytes.length;
-            }, 0);
-            
+            const animationSize = frames.reduce((sum, frame) => sum + generateBitmapBytes(mergeVisibleLayers(frame.layers)).length, 0);
             singleFrameByteCountSpan.textContent = singleSize;
             animationByteCountSpan.textContent = animationSize;
         }
 
         function updateUI() {
             if (frames.length === 0) return;
-
             drawScene(ctx, canvas, pixelSize, getActiveLayers());
             dimsText.textContent = `${iconWidth}x${iconHeight}`;
-
             renderFrameList();
             renderLayerList();
             updateExportBytes();
-
             if (isPlaying) stopAnimation();
         }
-
-        // --- Drawing Handlers (Unchanged logic) ---
-        
-        function handleStart(e) {
-            e.preventDefault();
-            if (frames.length === 0 || document.getElementById('editor').classList.contains('hidden')) return;
-            isDrawing = true;
-            const { x, y } = getPixelCoords(e);
-            startX = x; startY = y;
-            drawingState = (currentTool === 'eraser' ? 0 : 1); 
-            
-            if (currentTool === 'pencil' || currentTool === 'eraser') {
-                setPixel(getActiveLayers()[activeLayerIndex].data, x, y, drawingState); 
-            }
-
-            updateUI();
-        }
-
-        function handleMove(e) {
-            e.preventDefault();
-            if (!isDrawing || frames.length === 0) return;
-            const { x, y } = getPixelCoords(e);
-            
-            if (currentTool === 'pencil' || currentTool === 'eraser') {
-                drawLine(getActiveLayers()[activeLayerIndex].data, startX, startY, x, y, drawingState);
-                startX = x; startY = y;
-                drawScene(ctx, canvas, pixelSize, getActiveLayers());
-            }
-        }
-
-        function handleEnd(e) {
-            if (!isDrawing || frames.length === 0) return;
-            isDrawing = false;
-            
-            startX = -1; startY = -1;
-            updateUI();
-        }
-
-        // --- Export & Import Logic (Modified to support download) ---
 
         function mergeVisibleLayers(layers) {
             const composite = createBlankGrid(iconWidth, iconHeight);
@@ -779,8 +795,7 @@
                     for (let bit_col = 0; bit_col < 8; bit_col++) {
                         const x_bit = start_x + bit_col;
                         if (x_bit < iconWidth) {
-                            let is_set = compositeGrid[y][x_bit]; 
-                            if (is_set) { current_byte |= (1 << bit_col); }
+                            if (compositeGrid[y][x_bit]) current_byte |= (1 << bit_col);
                         }
                     }
                     byte_array.push(current_byte);
@@ -793,10 +808,9 @@
             let output = `// Frame: ${name} (${iconWidth}x${iconHeight}). Total Bytes: ${byte_array.length}\n`;
             output += `const uint8_t FRAME_BITMAP[${byte_array.length}] = {\n    `;
             for (let i = 0; i < byte_array.length; i++) {
-                const hex = '0x' + byte_array[i].toString(16).toUpperCase().padStart(2, '0');
-                output += hex;
-                if (i < byte_array.length - 1) { output += ', '; }
-                if ((i + 1) % 8 === 0 && i < byte_array.length - 1) { output += '\n    '; }
+                output += '0x' + byte_array[i].toString(16).toUpperCase().padStart(2, '0');
+                if (i < byte_array.length - 1) output += ', ';
+                if ((i + 1) % 8 === 0 && i < byte_array.length - 1) output += '\n    ';
             }
             output += '\n};';
             return output;
@@ -807,20 +821,15 @@
             let output = `// Animation Frames: ${frames.length} frames of ${iconWidth}x${iconHeight}.\n`;
             output += `// Total Data Size: ${frames.length * bytesPerFrame} bytes.\n`;
             output += `const uint8_t ANIMATION_BITMAPS[${frames.length}][${bytesPerFrame}] = {\n`;
-
             animationBytes.forEach((frameBytes, i) => {
                 output += `    // Frame ${i}: ${frames[i].name}\n    { `;
-                
                 for (let j = 0; j < frameBytes.length; j++) {
-                    const hex = '0x' + frameBytes[j].toString(16).toUpperCase().padStart(2, '0');
-                    output += hex;
-                    if (j < frameBytes.length - 1) { output += ', '; }
-                    if ((j + 1) % 8 === 0 && j < frameBytes.length - 1) { output += '\n      '; }
+                    output += '0x' + frameBytes[j].toString(16).toUpperCase().padStart(2, '0');
+                    if (j < frameBytes.length - 1) output += ', ';
+                    if ((j + 1) % 8 === 0 && j < frameBytes.length - 1) output += '\n      ';
                 }
-                
                 output += ` }${i < animationBytes.length - 1 ? ',' : ''}\n`;
             });
-
             output += `};`;
             return output;
         }
@@ -835,20 +844,16 @@
             document.body.removeChild(a);
         }
         
-        // NEW: Function to handle code generation and display
         function generateAndDisplayCode(type) {
             if (frames.length === 0) return;
-            
             let outputCode = '';
             let fileName = '';
-            
             if (type === 'single') {
                 const frameBytes = generateBitmapBytes(mergeVisibleLayers(getActiveLayers()));
                 outputCode = formatBytes(frameBytes, getActiveFrame().name);
                 fileName = `${getActiveFrame().name.toLowerCase().replace(/\s/g, '_')}_bitmap.c`;
                 generateSingleFrameBtn.textContent = 'Generated!';
                 setTimeout(() => generateSingleFrameBtn.textContent = `Generate Single Frame Array (${frameBytes.length} bytes)`, 2000);
-
             } else if (type === 'animation') {
                 const allAnimationBytes = frames.map(frame => generateBitmapBytes(mergeVisibleLayers(frame.layers)));
                 outputCode = formatAnimationBytes(allAnimationBytes);
@@ -857,28 +862,22 @@
                 generateAnimationBtn.textContent = 'Generated!';
                 setTimeout(() => generateAnimationBtn.textContent = `Generate Animation Array (${totalBytes} bytes)`, 2000);
             }
-
             byteOutputDiv.textContent = outputCode;
             outputContainer.classList.remove('hidden');
-            
-            // Store the generated code and file name for the export button
             exportCFileBtn.dataset.code = outputCode;
             exportCFileBtn.dataset.filename = fileName;
         }
 
+        // --- Import Logic ---
         function parseBytes(arrayString) {
-            const regex = /0x[0-9a-fA-F]{1,2}|\d+/g;
-            const matches = arrayString.match(regex);
+            const matches = arrayString.match(/0x[0-9a-fA-F]{1,2}|\d+/g);
             if (!matches) return [];
-            return matches.map(m => {
-                return m.startsWith('0x') ? parseInt(m, 16) : parseInt(m, 10);
-            }).filter(n => !isNaN(n) && n >= 0 && n <= 255);
+            return matches.map(m => m.startsWith('0x') ? parseInt(m, 16) : parseInt(m, 10)).filter(n => !isNaN(n) && n >= 0 && n <= 255);
         }
-
         function parseCArray(byte_array, width, height) {
             const grid = createBlankGrid(width, height);
             const h_banks = Math.ceil(width / 8);
-            if (byte_array.length !== h_banks * height) { return null; }
+            if (byte_array.length !== h_banks * height) return null;
             let byte_index = 0;
             for (let y = 0; y < height; y++) {
                 for (let h_bank = 0; h_bank < h_banks; h_bank++) {
@@ -886,71 +885,48 @@
                     const start_x = h_bank * 8;
                     for (let bit_col = 0; bit_col < 8; bit_col++) {
                         const x = start_x + bit_col;
-                        if (x < width) {
-                            if (bank_data & (1 << bit_col)) { grid[y][x] = 1; }
-                        }
+                        if (x < width) { if (bank_data & (1 << bit_col)) grid[y][x] = 1; }
                     }
                 }
             }
             return grid;
         }
-
         function handlePreview() {
             const inputStr = arrayInput.value;
-            const w = iconWidth;
-            const h = iconHeight;
+            const w = iconWidth, h = iconHeight;
             const expectedBytes = Math.ceil(w / 8) * h;
             const bytes = parseBytes(inputStr);
-            
             previewBytesSpan.textContent = `Bytes: ${bytes.length} (Expected: ${expectedBytes})`;
-
-            if (bytes.length === 0) { 
-                previewErrorP.textContent = 'No valid hex/decimal bytes found.';
-                previewErrorP.classList.remove('hidden');
-                commitImportBtn.disabled = true;
-                commitImportBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                parsedGrid = null;
-                return;
-            }
             if (bytes.length !== expectedBytes) { 
-                previewErrorP.textContent = `Byte count mismatch: Found ${bytes.length}, expected ${expectedBytes} for ${w}x${h}.`;
+                previewErrorP.textContent = `Byte count mismatch: Found ${bytes.length}, expected ${expectedBytes}.`;
                 previewErrorP.classList.remove('hidden');
                 commitImportBtn.disabled = true;
                 commitImportBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 parsedGrid = null;
                 return;
             }
-            
             parsedGrid = parseCArray(bytes, w, h);
-            
             if (parsedGrid) {
-                drawPreview(parsedGrid, w, h);
+                drawPreviewGrid(parsedGrid, w, h);
                 previewErrorP.classList.add('hidden');
                 commitImportBtn.disabled = false;
                 commitImportBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             } else { 
-                previewErrorP.textContent = 'Failed to generate grid from array.';
+                previewErrorP.textContent = 'Failed to generate grid.';
                 previewErrorP.classList.remove('hidden');
-                commitImportBtn.disabled = true;
-                commitImportBtn.classList.add('opacity-50', 'cursor-not-allowed');
             }
         }
-        
-        function drawPreview(grid, w, h) {
-            const canvasW = previewCanvas.width;
-            const canvasH = previewCanvas.height;
+        function drawPreviewGrid(grid, w, h) {
+            const canvasW = previewCanvas.width, canvasH = previewCanvas.height;
             const size = Math.min(canvasW / w, canvasH / h);
             previewCtx.clearRect(0, 0, canvasW, canvasH);
-            previewCtx.fillStyle = '#000000'; // Black for import preview
+            previewCtx.fillStyle = '#000000'; 
             for (let y = 0; y < h; y++) {
                 for (let x = 0; x < w; x++) {
-                    if (grid[y][x] === 1) {
-                        previewCtx.fillRect(x * size, y * size, size, size);
-                    }
+                    if (grid[y][x]) previewCtx.fillRect(x * size, y * size, size, size);
                 }
             }
         }
-        
         function handleImport() {
             if (parsedGrid && frames.length > 0) {
                 getActiveLayers()[activeLayerIndex].data = parsedGrid;
@@ -959,36 +935,23 @@
             }
         }
 
-        // --- Animation Player Logic (Unchanged logic) ---
-        
-
+        // --- Animation Logic ---
         function animate(timestamp) {
             if (!isPlaying) return;
-
             if (!lastTimestamp) lastTimestamp = timestamp;
             const elapsed = timestamp - lastTimestamp;
-
             if (elapsed > animationSpeed) {
                 animationFrame = (animationFrame + 1) % frames.length;
                 lastTimestamp = timestamp;
-                
                 currentAnimationFrame = frames[animationFrame];
                 playerCurrentFrameSpan.textContent = animationFrame + 1;
-                
                 drawScene(playerCtx, playerCanvas, pixelSize, currentAnimationFrame.layers);
             }
-
             animationFrameId = requestAnimationFrame(animate);
         }
-
         function playAnimation() {
-            if (frames.length < 2) {
-                // If only one frame, just draw it and don't play
-                drawScene(playerCtx, playerCanvas, pixelSize, getActiveLayers());
-                return; 
-            }
+            if (frames.length < 2) { drawScene(playerCtx, playerCanvas, pixelSize, getActiveLayers()); return; }
             if (isPlaying) return;
-
             isPlaying = true;
             playStopBtn.innerHTML = '❚❚'; 
             playStopBtn.classList.replace('bg-red-600', 'bg-amber-600');
@@ -998,40 +961,29 @@
             currentAnimationFrame = frames[animationFrame];
             animationFrameId = requestAnimationFrame(animate);
         }
-
         function stopAnimation() {
             if (!isPlaying) return;
-
             isPlaying = false;
             playStopBtn.innerHTML = '▶'; 
             playStopBtn.classList.replace('bg-amber-600', 'bg-red-600');
             cancelAnimationFrame(animationFrameId);
-            
             drawScene(playerCtx, playerCanvas, pixelSize, getActiveLayers());
             playerCurrentFrameSpan.textContent = currentFrameIndex + 1;
         }
-
         function navigateFrame(direction) {
             stopAnimation(); 
             currentFrameIndex = (currentFrameIndex + direction + frames.length) % frames.length;
             selectFrame(currentFrameIndex);
         }
 
-        // --- Initialization and Event Binding ---
-
+        // --- Initialization ---
         function switchTab(tabId) {
             document.querySelectorAll('.tab-page').forEach(page => page.classList.add('hidden'));
             document.getElementById(tabId).classList.remove('hidden');
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active-tab'));
             document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active-tab');
-
-            if (tabId === 'editor') {
-                updateUI();
-            } else if (tabId === 'player') {
-                stopAnimation();
-                drawScene(playerCtx, playerCanvas, pixelSize, getActiveLayers());
-                playerCurrentFrameSpan.textContent = currentFrameIndex + 1;
-            }
+            if (tabId === 'editor') updateUI();
+            else if (tabId === 'player') { stopAnimation(); drawScene(playerCtx, playerCanvas, pixelSize, getActiveLayers()); }
         }
 
         function initTools() {
@@ -1039,7 +991,7 @@
             TOOLS.forEach(tool => {
                 const btn = document.createElement('button');
                 btn.id = `tool-${tool.id}`;
-                btn.className = `tool-btn p-3 rounded-md transition duration-150 text-xl font-bold border border-stone-600 ${tool.id === currentTool ? 'active' : ''}`;
+                btn.className = `tool-btn p-3 rounded-md transition duration-150 font-bold border border-stone-600 ${tool.id === currentTool ? 'active' : ''}`;
                 btn.innerHTML = tool.icon;
                 btn.title = tool.name;
                 btn.addEventListener('click', () => {
@@ -1056,9 +1008,7 @@
         function initEditor(width, height) {
             iconWidth = width;
             iconHeight = height;
-
             pixelSize = MAX_CANVAS_WIDTH / iconWidth; 
-            
             canvas.width = MAX_CANVAS_WIDTH;
             canvas.height = MAX_CANVAS_WIDTH * (iconHeight / iconWidth); 
             playerCanvas.width = MAX_CANVAS_WIDTH;
@@ -1081,13 +1031,12 @@
                 });
                 selectFrame(currentFrameIndex); 
             }
-
             renderFrameList();
             renderLayerList();
             updateUI();
         }
 
-        // Bind Drawing Events
+        // Listeners
         canvas.addEventListener('mousedown', handleStart);
         canvas.addEventListener('mousemove', handleMove);
         document.addEventListener('mouseup', handleEnd); 
@@ -1095,88 +1044,46 @@
         canvas.addEventListener('touchmove', handleMove);
         document.addEventListener('touchend', handleEnd);
 
-        // Bind Controls
-        document.getElementById('clearBtn').addEventListener('click', () => {
-            if (frames.length > 0) {
-                getActiveLayers()[activeLayerIndex].data = createBlankGrid(iconWidth, iconHeight);
-                updateUI();
-            }
-        });
-        
-        document.getElementById('applyResBtn').addEventListener('click', () => {
-            const w = parseInt(inputWidth.value, 10);
-            const h = parseInt(inputHeight.value, 10);
-            if (isNaN(w) || w < 1 || w > 84 || isNaN(h) || h < 1 || h > 48) { return; }
-            initEditor(w, h); 
-        });
-        
-        document.getElementById('newLayerBtn').addEventListener('click', () => {
-            if (frames.length > 0) createNewLayer();
-        });
-
-        // Frame Reordering
+        document.getElementById('clearBtn').addEventListener('click', () => { getActiveLayers()[activeLayerIndex].data = createBlankGrid(iconWidth, iconHeight); updateUI(); });
+        document.getElementById('applyResBtn').addEventListener('click', () => initEditor(parseInt(inputWidth.value, 10), parseInt(inputHeight.value, 10)));
+        document.getElementById('newLayerBtn').addEventListener('click', () => { if (frames.length > 0) createNewLayer(); });
         moveFrameUpBtn.addEventListener('click', () => moveFrame(-1));
         moveFrameDownBtn.addEventListener('click', () => moveFrame(1));
-
-        // Frame Creation
-        duplicateFrameBtn.addEventListener('click', () => {
-            addFrame(true);
-        });
-        blankFrameBtn.addEventListener('click', () => {
-            addFrame(false);
-        });
-
-        // NEW: Generation and Export Bindings
+        duplicateFrameBtn.addEventListener('click', () => addFrame(true));
+        blankFrameBtn.addEventListener('click', () => addFrame(false));
         generateSingleFrameBtn.addEventListener('click', () => generateAndDisplayCode('single'));
         generateAnimationBtn.addEventListener('click', () => generateAndDisplayCode('animation'));
-
+        
         copyOutputBtn.addEventListener('click', () => {
-            const code = byteOutputDiv.textContent;
-            const tempTextArea = document.createElement('textarea');
-            tempTextArea.value = code;
-            document.body.appendChild(tempTextArea);
-            tempTextArea.select();
+            const temp = document.createElement('textarea');
+            temp.value = byteOutputDiv.textContent;
+            document.body.appendChild(temp);
+            temp.select();
             document.execCommand('copy');
-            document.body.removeChild(tempTextArea);
-            copyOutputBtn.textContent = 'Code Copied!';
+            document.body.removeChild(temp);
+            copyOutputBtn.textContent = 'Copied!';
             setTimeout(() => copyOutputBtn.textContent = 'Copy to Clipboard', 2000);
         });
-
         exportCFileBtn.addEventListener('click', (e) => {
-            const code = e.target.dataset.code;
-            const filename = e.target.dataset.filename || 'bitmap_export.c';
-            if (code) {
-                downloadCFile(code, filename);
-                exportCFileBtn.textContent = 'Exported!';
-                setTimeout(() => exportCFileBtn.textContent = 'Export (Download .c file)', 2000);
-            }
+            if (e.target.dataset.code) downloadCFile(e.target.dataset.code, e.target.dataset.filename || 'export.c');
         });
-        
-        // Modal Bindings
+
         mainImportBtn.addEventListener('click', showImportModal);
-        cancelImportBtn.addEventListener('click', () => { hideImportModal(); updateUI(); }); 
+        cancelImportBtn.addEventListener('click', hideImportModal);
         previewArrayBtn.addEventListener('click', handlePreview);
         commitImportBtn.addEventListener('click', handleImport);
 
-        // Player Bindings
         playStopBtn.addEventListener('click', () => isPlaying ? stopAnimation() : playAnimation());
         nextFrameBtn.addEventListener('click', () => navigateFrame(1));
         prevFrameBtn.addEventListener('click', () => navigateFrame(-1));
         speedInput.addEventListener('input', (e) => {
             animationSpeed = parseInt(e.target.value, 10);
-            if (isPlaying) {
-                stopAnimation();
-                playAnimation(); 
-            }
+            if (isPlaying) { stopAnimation(); playAnimation(); }
         });
-
-        // Tab Bindings
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-        });
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
         function showImportModal() {
-            if (frames.length === 0) { addFrame(false); }
+            if (frames.length === 0) addFrame(false);
             importModal.classList.remove('hidden');
             previewErrorP.classList.add('hidden');
             commitImportBtn.disabled = true;
@@ -1185,7 +1092,6 @@
             previewBytesSpan.textContent = `Bytes: ${Math.ceil(iconWidth / 8) * iconHeight} (Expected)`;
             previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
             arrayInput.focus();
-            arrayInput.select();
         }
         function hideImportModal() {
             importModal.classList.add('hidden');
@@ -1193,7 +1099,6 @@
             parsedGrid = null;
         }
 
-        // --- Initial Load ---
         window.onload = function() {
             initTools();
             initEditor(parseInt(inputWidth.value, 10), parseInt(inputHeight.value, 10)); 
@@ -1202,4 +1107,3 @@
     </script>
 </body>
 </html>
-
