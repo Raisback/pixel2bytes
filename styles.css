@@ -1,0 +1,130 @@
+
+body { 
+    font-family: 'Inter', sans-serif; 
+    background-color: #1c1917; 
+    color: #f5f5f4; 
+    overscroll-behavior: none;
+}
+.editor-container { max-width: 1400px;}
+.bg-panel { background-color: #292524;}
+.text-accent { color: #f59e0b;}
+
+/* Canvas styles */
+#gridCanvas, #playerCanvas {
+    border: 2px solid #a1a1aa;
+    background-color: #e5e5e5;
+    touch-action: none;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    width: 100%;
+    height: auto;
+    cursor: crosshair;
+}
+
+/* Tab styles */
+.tab-group {
+    display: flex;
+    padding: 0.25rem;
+    background-color: #1c1917; 
+    border-radius: 0.5rem; 
+    margin-bottom: 1.5rem; 
+    border: 1px solid #44403c; 
+    gap: 0.25rem; 
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem; 
+    font-weight: 700; 
+    color: #a8a29e; 
+    border-radius: 0.375rem; 
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    outline: none;
+}
+
+.tab-btn:hover {
+    color: #e7e5e4; 
+    background-color: #292524; 
+}
+
+.tab-btn.active-tab {
+    background-color: #44403c; 
+    color: #f59e0b; 
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+    outline: 1px solid #57534e; 
+}
+
+/* Tool active state - Boxy and defined */
+.tool-btn {
+    background-color: #44403c; 
+    color: #e7e5e4;
+    transition: background-color 150ms;
+    border: 2px solid #57534e; 
+    border-radius: 0.375rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.25rem; 
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.tool-btn.active {
+    box-shadow: 0 0 0 3px #f59e0b; 
+    background-color: #f59e0b; 
+    color: #1c1917; 
+    border-color: #f59e0b;
+}
+
+/* Layer/Frame item focus/active */
+.item { 
+    border-radius: 0.375rem; 
+    transition: duration 100ms; 
+}
+
+.item.active {
+    background-color: #44403c;
+    border-left: 4px solid #f59e0b;
+}
+
+
+
+/* Utility and Export buttons */
+.action-btn, .export-control-btn {
+    padding: 0.5rem 1rem; 
+    font-weight: 600;
+    border-radius: 0.375rem; 
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); 
+    transition: background-color 200ms;
+    font-size: 0.875rem;
+    border: 2px solid #78716c; 
+    cursor: pointer;
+    background-color: transparent;
+    color: #f5f5f4;
+}
+
+.action-btn:hover, .export-control-btn:hover {
+    background-color: #44403c;
+}
+
+.item:hover:not(.active) {
+    background-color: #292524; 
+}
+
+
+/* Input fields */
+input[type="number"] {
+    @apply rounded-md;
+}
+
+
+/* Output text */
+.pixel-output {
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
